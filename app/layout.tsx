@@ -1,16 +1,15 @@
-import type React from "react"
-import type { Metadata } from "next"
+import "@/app/globals.css"
 import { Inter } from "next/font/google"
-import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { DashboardLayout } from "@/components/dashboard-layout"
+import { MainLayout } from "@/components/main-layout"
+import { Preloader } from "@/components/preloader"
+import { Navigation } from "@/components/navigation"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export const metadata: Metadata = {
-  title: "MAVLink Telemetry Dashboard",
-  description: "Real-time telemetry data visualization for MAVLink",
-  generator: "v0.dev",
+export const metadata = {
+  title: "Drone Control Interface",
+  description: "A modern web interface for drone control and monitoring",
 }
 
 export default function RootLayout({
@@ -20,16 +19,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${inter.className} min-h-screen w-full flex flex-col bg-background`}
-      >
+      <body className={inter.className}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="dark"
+          defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <DashboardLayout>{children}</DashboardLayout>
+          <Preloader />
+          <Navigation />
+          <main className="pt-16">
+            <MainLayout>{children}</MainLayout>
+          </main>
         </ThemeProvider>
       </body>
     </html>

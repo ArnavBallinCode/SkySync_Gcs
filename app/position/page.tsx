@@ -1,21 +1,39 @@
-import { DashboardHeader } from "@/components/dashboard-header"
-import { PositionVisualizer } from "@/components/position-visualizer"
+"use client"
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PositionData } from "@/components/position-data"
+import { PositionMap } from "@/components/position-map"
+import { Enhanced3DView } from "@/components/enhanced-3d-view"
 
 export default function PositionPage() {
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <DashboardHeader
-        title="Position Tracking"
-        description="Real-time position and trajectory visualization"
-      />
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 h-[500px]"> {/* 👈 Ensures space for 3D Canvas */}
-          <PositionVisualizer />
-        </div>
-        <div>
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>3D Visualization</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Enhanced3DView />
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle>Position Data</CardTitle>
+          </CardHeader>
+          <CardContent>
           <PositionData />
-        </div>
+          </CardContent>
+        </Card>
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle>Map View</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <PositionMap />
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

@@ -1,14 +1,50 @@
-import { DashboardHeader } from "@/components/dashboard-header"
+"use client"
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { PositionData } from "@/components/position-data"
+import { AttitudeVisualizer } from "@/components/attitude-visualizer"
+import { TelemetryStatus } from "@/components/telemetry-status"
 import { TelemetryOverview } from "@/components/telemetry-overview"
 
-export default function Home() {
+export default function DashboardPage() {
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <DashboardHeader
-        title="MAVLink Telemetry Dashboard"
-        description="Real-time flight data monitoring and visualization"
-      />
-      <TelemetryOverview />
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Telemetry Overview</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TelemetryOverview showAllParameters />
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle>Position</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <PositionData />
+          </CardContent>
+        </Card>
+        <Card className="md:col-span-1">
+          <CardHeader>
+            <CardTitle>Attitude</CardTitle>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <AttitudeVisualizer />
+          </CardContent>
+        </Card>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Connection Status</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TelemetryStatus />
+        </CardContent>
+      </Card>
     </div>
   )
 }

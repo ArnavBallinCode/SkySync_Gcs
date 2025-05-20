@@ -2,15 +2,42 @@ import json
 import os
 from pymavlink import mavutil
 import time
+import argparse
+
+# Parse command line arguments
+parser = argparse.ArgumentParser(description='MAVLink listener with UDP support')
+parser.add_argument('--connection', type=str, default='udp:0.0.0.0:14550',
+                    help='Connection string (e.g., udp:0.0.0.0:14550 or /dev/tty.usbserial-0001)')
+parser.add_argument('--baud', type=int, default=57600,
+                    help='Baud rate for serial connection')
+
+args = parser.parse_args()
 
 # Ensure the public/params directory exists
 PARAMS_DIR = os.path.join('public', 'params')
 
 os.makedirs(PARAMS_DIR, exist_ok=True)
 
+def create_mavlink_connection():
+    try:
+        # For UDP connections
+        if args.connection.startswith('udp:'):
+            master = mavutil.mavlink_connection(args.connection)
+            print(f"Established UDP connection on {args.connection}")
+        # For serial connections
+        else:
+            master = mavutil.mavlink_connection(args.connection, baud=args.baud)
+            print(f"Established serial connection on {args.connection} at {args.baud} baud")
+        return master
+    except Exception as e:
+        print(f"Error establishing connection: {e}")
+        return None
+
 # Connect to MAVLink
-master = mavutil.mavlink_connection('/dev/tty.usbserial-0001', baud=57600)
-# master = mavutil.mavlink_connection('udpin:192.168.2.255:14550', baud=57600)
+master = create_mavlink_connection()
+if not master:
+    print("Failed to establish MAVLink connection. Exiting.")
+    exit(1)
 
 def check_heartbeat():
     print("Waiting for heartbeat...")

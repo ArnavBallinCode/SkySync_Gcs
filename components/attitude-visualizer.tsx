@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useRef, useState, useEffect } from "react"
+import { Canvas, useFrame } from "@react-three/fiber"
+import { OrbitControls, Grid, Stats } from "@react-three/drei"
 import * as THREE from "three"
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 // Attitude simulator for realistic attitude visualization
 class AttitudeSimulator {
@@ -22,7 +23,7 @@ class AttitudeSimulator {
 
     // Calculate target attitude based on a realistic flight pattern
     const targetRoll = Math.sin(this.angle) * 0.2 // gentle roll, max ~11 degrees
-    const targetPitch = Math.sin(this.angle * 2) * 0.1 // gentle pitch, max ~6 degrees
+    const targetPitch = Math.sin(this.angle) * 0.5 // increased pitch for visibility, max ~30 degrees
     const targetYaw = this.angle % (2 * Math.PI) // continuous yaw rotation
 
     // Smoothly move toward the target attitude
@@ -48,198 +49,136 @@ class AttitudeSimulator {
   }
 }
 
-export function AttitudeVisualizer() {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const rendererRef = useRef<THREE.WebGLRenderer | null>(null)
-  const sceneRef = useRef<THREE.Scene | null>(null)
-  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null)
-  const controlsRef = useRef<OrbitControls | null>(null)
-  const aircraftRef = useRef<THREE.Group | null>(null)
-  const frameIdRef = useRef<number | null>(null)
-  const simulatorRef = useRef(new AttitudeSimulator())
+// Drone model component
+function DroneModel({ attitude }: { attitude: { roll: number; pitch: number; yaw: number } }) {
+  const groupRef = useRef<THREE.Group>(null)
 
   useEffect(() => {
-    if (!containerRef.current) return
-
-    // Initialize scene
-    const scene = new THREE.Scene()
-    sceneRef.current = scene
-
-    // Initialize camera
-    const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000)
-    camera.position.set(0, 2, 5)
-    cameraRef.current = camera
-
-    // Initialize renderer
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true })
-    renderer.setPixelRatio(window.devicePixelRatio)
-    renderer.setClearColor(0x000000, 0)
-    containerRef.current.innerHTML = ""
-    containerRef.current.appendChild(renderer.domElement)
-    rendererRef.current = renderer
-
-    // Initialize controls
-    const controls = new OrbitControls(camera, renderer.domElement)
-    controls.enableDamping = true
-    controls.dampingFactor = 0.05
-    controlsRef.current = controls
-
-    // Create aircraft model
-    const aircraft = createAircraft()
-    scene.add(aircraft)
-    aircraftRef.current = aircraft
-
-    // Add lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5)
-    scene.add(ambientLight)
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
-    directionalLight.position.set(5, 5, 5)
-    scene.add(directionalLight)
-
-    // Add grid helper
-    const gridHelper = new THREE.GridHelper(10, 10, 0x444444, 0x222222)
-    scene.add(gridHelper)
-
-    // Add coordinate axes
-    const axesHelper = new THREE.AxesHelper(2)
-    scene.add(axesHelper)
-
-    // Handle resize
-    const handleResize = () => {
-      if (!containerRef.current || !rendererRef.current || !cameraRef.current) return
-
-      const width = containerRef.current.clientWidth
-      const height = containerRef.current.clientHeight
-
-      cameraRef.current.aspect = width / height
-      cameraRef.current.updateProjectionMatrix()
-
-      rendererRef.current.setSize(width, height)
-    }
-
-    // Initial resize
-    handleResize()
-    window.addEventListener("resize", handleResize)
-
-    // Animation loop
-    const animate = () => {
-      frameIdRef.current = requestAnimationFrame(animate)
-
-      if (controlsRef.current) {
-        controlsRef.current.update()
-      }
-
-      if (rendererRef.current && sceneRef.current && cameraRef.current) {
-        rendererRef.current.render(sceneRef.current, cameraRef.current)
-      }
-    }
-
-    animate()
-
-    // Cleanup
-    return () => {
-      if (frameIdRef.current !== null) {
-        cancelAnimationFrame(frameIdRef.current)
-      }
-
-      window.removeEventListener("resize", handleResize)
-
-      if (rendererRef.current && containerRef.current) {
-        containerRef.current.removeChild(rendererRef.current.domElement)
-      }
-
-      if (controlsRef.current) {
-        controlsRef.current.dispose()
-      }
-    }
-  }, [])
-
-  // Function to create aircraft model
-  const createAircraft = () => {
-    const group = new THREE.Group()
-
-    // Create body
-    const bodyGeometry = new THREE.CylinderGeometry(0.2, 0.5, 2, 8)
-    const bodyMaterial = new THREE.MeshPhongMaterial({ color: 0x00e1ff, flatShading: true })
-    const body = new THREE.Mesh(bodyGeometry, bodyMaterial)
-    body.rotation.x = Math.PI / 2
-    group.add(body)
-
-    // Create wings
-    const wingGeometry = new THREE.BoxGeometry(3, 0.1, 0.5)
-    const wingMaterial = new THREE.MeshPhongMaterial({ color: 0x0077aa, flatShading: true })
-    const wing = new THREE.Mesh(wingGeometry, wingMaterial)
-    wing.position.y = 0.1
-    group.add(wing)
-
-    // Create tail
-    const tailGeometry = new THREE.BoxGeometry(1, 0.1, 0.5)
-    const tailMaterial = new THREE.MeshPhongMaterial({ color: 0x0077aa, flatShading: true })
-    const tail = new THREE.Mesh(tailGeometry, tailMaterial)
-    tail.position.z = -0.9
-    tail.position.y = 0.1
-    group.add(tail)
-
-    // Create vertical stabilizer
-    const vStabGeometry = new THREE.BoxGeometry(0.1, 0.5, 0.5)
-    const vStabMaterial = new THREE.MeshPhongMaterial({ color: 0x0077aa, flatShading: true })
-    const vStab = new THREE.Mesh(vStabGeometry, vStabMaterial)
-    vStab.position.z = -0.9
-    vStab.position.y = 0.3
-    group.add(vStab)
-
-    return group
-  }
-
-  // Function to update aircraft attitude
-  const updateAttitude = (roll: number, pitch: number, yaw: number) => {
-    if (!aircraftRef.current) return
-
+    if (!groupRef.current) return
+    
     // Reset rotation
-    aircraftRef.current.rotation.set(0, 0, 0)
-
+    groupRef.current.rotation.set(0, 0, 0)
+    
     // Apply rotations in the correct order: yaw, pitch, roll
-    aircraftRef.current.rotateY(yaw)
-    aircraftRef.current.rotateX(pitch)
-    aircraftRef.current.rotateZ(roll)
-  }
+    groupRef.current.rotateY(attitude.yaw)
+    groupRef.current.rotateX(attitude.pitch)
+    groupRef.current.rotateZ(attitude.roll)
+  }, [attitude])
 
-  // Fetch attitude data or use simulator
+  return (
+    <group ref={groupRef}>
+      {/* Main body (center hub) */}
+      <mesh>
+        <boxGeometry args={[0.4, 0.1, 0.4]} />
+        <meshPhongMaterial color="#2c3e50" flatShading />
+      </mesh>
+
+      {/* Top cover */}
+      <mesh position={[0, 0.075, 0]}>
+        <boxGeometry args={[0.35, 0.05, 0.35]} />
+        <meshPhongMaterial color="#34495e" flatShading />
+      </mesh>
+
+      {/* Arms and propellers */}
+      {[
+        { pos: [-0.28, 0, 0.28], color: "#e74c3c" }, // Front left (red)
+        { pos: [0.28, 0, 0.28], color: "#e74c3c" },  // Front right (red)
+        { pos: [-0.28, 0, -0.28], color: "#2ecc71" }, // Back left (green)
+        { pos: [0.28, 0, -0.28], color: "#2ecc71" }   // Back right (green)
+      ].map((arm, i) => (
+        <group key={i} position={[arm.pos[0], arm.pos[1], arm.pos[2]]} rotation={[0, Math.atan2(arm.pos[2], arm.pos[0]), 0]}>
+          {/* Arm */}
+          <mesh>
+            <boxGeometry args={[0.22, 0.04, 0.04]} />
+            <meshPhongMaterial color="#7f8c8d" />
+          </mesh>
+
+          {/* Motor housing */}
+          <mesh position={[0, 0.05, 0]}>
+            <cylinderGeometry args={[0.04, 0.04, 0.06, 12]} />
+            <meshPhongMaterial color="#2c3e50" />
+          </mesh>
+
+          {/* Propeller blades */}
+          <group position={[0, 0.08, 0]}>
+            <mesh>
+              <boxGeometry args={[0.25, 0.01, 0.025]} />
+              <meshPhongMaterial color={arm.color} />
+            </mesh>
+            <mesh rotation={[0, Math.PI / 2, 0]}>
+              <boxGeometry args={[0.25, 0.01, 0.025]} />
+              <meshPhongMaterial color={arm.color} />
+            </mesh>
+          </group>
+
+          {/* Motor light */}
+          <pointLight position={[0, 0.05, 0]} color={arm.color} intensity={0.5} distance={0.3} />
+        </group>
+      ))}
+
+      {/* LED indicator */}
+      <mesh position={[0, 0.1, 0]}>
+        <sphereGeometry args={[0.02, 8, 8]} />
+        <meshPhongMaterial color="#2ecc71" emissive="#2ecc71" />
+      </mesh>
+    </group>
+  )
+}
+
+// Scene setup component
+function Scene({ attitude }: { attitude: { roll: number; pitch: number; yaw: number } }) {
+  return (
+    <>
+      <ambientLight intensity={0.5} />
+      <directionalLight position={[5, 5, 5]} intensity={1} />
+      <Grid args={[10, 10]} cellColor="#444444" sectionColor="#222222" fadeDistance={30} />
+      <DroneModel attitude={attitude} />
+      <OrbitControls 
+        enableDamping 
+        dampingFactor={0.05} 
+        minDistance={1} 
+        maxDistance={10}
+      />
+    </>
+  )
+}
+
+export function AttitudeVisualizer() {
+  const [attitude, setAttitude] = useState({ roll: 0, pitch: 0, yaw: 0 })
+  const simulatorRef = useRef(new AttitudeSimulator())
+
   useEffect(() => {
     const fetchAttitudeData = async () => {
       try {
         const response = await fetch(`/params/ATTITUDE.json?t=${Date.now()}`)
         if (!response.ok) {
-          // Generate realistic simulated data if fetch fails
           const simulatedAttitude = simulatorRef.current.update()
-          updateAttitude(simulatedAttitude.roll, simulatedAttitude.pitch, simulatedAttitude.yaw)
+          setAttitude(simulatedAttitude)
           return
         }
 
         const data = await response.json()
         if (data && typeof data.roll === "number" && typeof data.pitch === "number" && typeof data.yaw === "number") {
-          updateAttitude(data.roll, data.pitch, data.yaw)
+          setAttitude(data)
         }
       } catch (error) {
         console.error("Error fetching attitude data:", error)
-        // Generate realistic simulated data if fetch fails
         const simulatedAttitude = simulatorRef.current.update()
-        updateAttitude(simulatedAttitude.roll, simulatedAttitude.pitch, simulatedAttitude.yaw)
+        setAttitude(simulatedAttitude)
       }
     }
 
-    
-    // Initial fetch
     fetchAttitudeData()
-
-    // Set up interval for periodic updates
     const intervalId = setInterval(fetchAttitudeData, 100)
-
-    // Clean up interval on component unmount
     return () => clearInterval(intervalId)
   }, [])
 
-  return <div ref={containerRef} className="w-full h-full rounded-lg bg-black/10" />
+  return (
+    <div className="w-full h-full rounded-lg bg-black/10">
+      <Canvas camera={{ position: [0, 2, 5], fov: 75 }}>
+        <Scene attitude={attitude} />
+      </Canvas>
+    </div>
+  )
 }
 
