@@ -3,61 +3,33 @@
 import { useEffect, useRef, useState } from "react"
 import { Card } from "@/components/ui/card"
 
-// Flight path simulation
-class FlightPathSimulator {
-  baseLatitude = 47.123456
-  baseLongitude = 8.123456
-  currentLatitude = this.baseLatitude
-  currentLongitude = this.baseLongitude
-  currentAltitude = 1.5 // Starting at 1.5m
-
-  // Flight pattern parameters
-  radius = 0.0005 // Radius of the circular pattern
-  angle = 0 // Current angle in the pattern
-  angleIncrement = 0.05 // How fast we move around the pattern
-  altitudeDirection = 0.01 // Small altitude change
-
-  // Get the next position in a realistic flight pattern
-  getNextPosition() {
-    // Update the angle for a circular/figure-8 pattern
-    this.angle += this.angleIncrement
-
-    // Calculate new position using a figure-8 pattern
-    const latOffset = this.radius * Math.sin(this.angle)
-    const lonOffset = this.radius * Math.sin(this.angle * 2) * 0.5
-
-    // Update position with some small random variations for realism
-    this.currentLatitude = this.baseLatitude + latOffset + (Math.random() - 0.5) * 0.00001
-    this.currentLongitude = this.baseLongitude + lonOffset + (Math.random() - 0.5) * 0.00001
-
-    // Update altitude with small changes
-    if (Math.random() > 0.8) {
-      this.altitudeDirection = Math.max(-0.03, Math.min(0.03, this.altitudeDirection + (Math.random() - 0.5) * 0.01))
-    }
-
-    this.currentAltitude += this.altitudeDirection
-    this.currentAltitude = Math.max(0.5, Math.min(3, this.currentAltitude))
-
-    return {
-      latitude: this.currentLatitude,
-      longitude: this.currentLongitude,
-      altitude: this.currentAltitude,
-    }
-  }
+interface Position {
+  latitude: number
+  longitude: number
+  altitude: number
 }
 
 export function PositionMap() {
-  const canvasRef = useRef(null)
-  const [positions, setPositions] = useState([])
-  const flightSimulator = useRef(new FlightPathSimulator())
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [positions, setPositions] = useState<Position[]>([])
 
-  // Simulate real-time data updates with a realistic flight path
+  // Fetch real-time GPS data from the backend
   useEffect(() => {
-    const interval = setInterval(() => {
-      const newPosition = flightSimulator.current.getNextPosition()
-      setPositions((prev) => [...prev.slice(-100), newPosition])
-    }, 1000)
-
+    const interval = setInterval(async () => {
+      try {
+        const res = await fetch(`/params/GLOBAL_POSITION_INT.json?t=${Date.now()}`)
+        if (res.ok) {
+          const data = await res.json()
+          // Convert MAVLink int32 lat/lon (1E7) to degrees
+          const latitude = data.lat / 1e7
+          const longitude = data.lon / 1e7
+          const altitude = data.relative_alt ? data.relative_alt / 1000 : 0 // mm to m
+          if (typeof latitude === "number" && typeof longitude === "number") {
+            setPositions((prev) => [...prev.slice(-100), { latitude, longitude, altitude }])
+          }
+        }
+      } catch {}
+    }, 500)
     return () => clearInterval(interval)
   }, [])
 
@@ -67,6 +39,7 @@ export function PositionMap() {
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext("2d")
+    if (!ctx) return
     const { width, height } = canvas
 
     // Clear canvas

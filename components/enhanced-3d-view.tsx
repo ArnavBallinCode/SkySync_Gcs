@@ -143,8 +143,9 @@ function Drone({ position, rotation, showTrail = true }: DroneProps) {
   )
 }
 
-// Environment effects
+// Environment effects with custom ground size
 function Environment3D() {
+  // 30x40 feet ≈ 9.14m x 12.19m
   return (
     <>
       {/* Main lighting */}
@@ -160,7 +161,7 @@ function Environment3D() {
 
       {/* Ground plane for better visibility */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
-        <planeGeometry args={[30, 30]} />
+        <planeGeometry args={[12.19, 9.14]} />
         <meshStandardMaterial color="#1a237e" opacity={0.5} transparent />
       </mesh>
 
@@ -198,12 +199,13 @@ Yaw: ${(attitude.yaw * 180 / Math.PI).toFixed(1)}°`}
   )
 }
 
-// Enhanced grid with better visibility
+// Enhanced grid with better visibility and custom size
 function EnhancedGrid() {
+  // 30x40 feet ≈ 9.14m x 12.19m
   return (
     <>
       <Grid
-        args={[30, 30]}
+        args={[12.19, 9.14]}
         cellSize={1}
         cellThickness={1}
         cellColor="#4fc3f7"
@@ -213,10 +215,10 @@ function EnhancedGrid() {
         fadeDistance={30}
         fadeStrength={1}
       />
-      {[-10, -5, 0, 5, 10].map((x) => (
+      {[-4, 0, 4, 8, 12].map((x) => (
         <Text
           key={x}
-          position={[x, 0.1, -10]}
+          position={[x, 0.1, -4.5]}
           rotation={[-Math.PI / 2, 0, 0]}
           color="#b3e5fc"
           fontSize={0.5}
@@ -228,6 +230,54 @@ function EnhancedGrid() {
   )
 }
 
+// Dotted trajectory line component
+function TrajectoryLine({ points }: { points: Position[] }) {
+  if (points.length < 2) return null
+  const positions = points.map((p) => [p.x, -p.z, p.y]) // Flip Z axis to positive up
+  return (
+    <line>
+      <bufferGeometry attach="geometry">
+        <bufferAttribute
+          attach="attributes-position"
+          args={[new Float32Array(positions.flat()), 3]}
+        />
+      </bufferGeometry>
+      <lineDashedMaterial
+        attach="material"
+        color="#38bdf8"
+        linewidth={2}
+        dashSize={0.3}
+        gapSize={0.2}
+      />
+    </line>
+  )
+}
+
+// Vertical height line
+function HeightLine({ position }: { position: Position }) {
+  const points = [
+    [position.x, 0, position.y],
+    [position.x, -position.z, position.y], // Flip Z axis
+  ]
+  return (
+    <line>
+      <bufferGeometry attach="geometry">
+        <bufferAttribute
+          attach="attributes-position"
+          args={[new Float32Array(points.flat()), 3]}
+        />
+      </bufferGeometry>
+      <lineDashedMaterial
+        attach="material"
+        color="#f43f5e"
+        linewidth={2}
+        dashSize={0.15}
+        gapSize={0.15}
+      />
+    </line>
+  )
+}
+
 interface EnhancedVisualizerProps {
   className?: string
 }
@@ -235,6 +285,7 @@ interface EnhancedVisualizerProps {
 export function Enhanced3DView({ className }: EnhancedVisualizerProps) {
   const [position, setPosition] = useState<Position>({ x: 0, y: 0, z: -1.5 })
   const [attitude, setAttitude] = useState<Attitude>({ roll: 0, pitch: 0, yaw: 0 })
+  const [trajectory, setTrajectory] = useState<Position[]>([])
   const cameraRef = useRef<ThreePerspectiveCamera>(null)
 
   useEffect(() => {
@@ -244,15 +295,14 @@ export function Enhanced3DView({ className }: EnhancedVisualizerProps) {
         const posRes = await fetch(`/params/LOCAL_POSITION_NED.json?t=${Date.now()}`)
         if (posRes.ok) {
           const posData = await posRes.json()
-          console.log('Position data:', posData)
           setPosition(posData)
+          setTrajectory((prev) => [...prev.slice(-199), posData]) // Keep last 200 points
         }
 
         // Fetch attitude data
         const attRes = await fetch(`/params/ATTITUDE.json?t=${Date.now()}`)
         if (attRes.ok) {
           const attData = await attRes.json()
-          console.log('Attitude data:', attData)
           setAttitude(attData)
         }
       } catch (error) {
@@ -279,17 +329,19 @@ export function Enhanced3DView({ className }: EnhancedVisualizerProps) {
           />
           <Environment3D />
           <EnhancedGrid />
+          <TrajectoryLine points={trajectory} />
+          <HeightLine position={position} />
           <Drone
-            position={[position.x, position.z, position.y]}
+            position={[position.x, -position.z, position.y]} // Flip Z axis to positive up
             rotation={[-attitude.pitch, -attitude.yaw, -attitude.roll]}
           />
-          <DebugOverlay position={position} attitude={attitude} />
+          <DebugOverlay position={{ ...position, z: -position.z }} attitude={attitude} />
           <OrbitControls
             minDistance={1}
             maxDistance={50}
             enableDamping
             dampingFactor={0.05}
-            target={[position.x, position.z, position.y]}
+            target={[position.x, -position.z, position.y]}
             maxPolarAngle={Math.PI / 1.5}
             minPolarAngle={0}
           />
