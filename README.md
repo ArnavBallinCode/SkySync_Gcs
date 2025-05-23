@@ -138,4 +138,140 @@ This project is **not open-source**. All rights are reserved by the author. No p
 If you need help, open an issue in the repo or reach out via:  
 📧 **Email:** 24bcs015@iiitdwd.ac.in  
 
+# Team NJORD - Drone Web Interface
+
+## Project Overview
+A sophisticated web interface for monitoring and controlling Pixhawk-based drones using MAVLink protocol. This project provides real-time telemetry data visualization, sensor calibration capabilities, and comprehensive system monitoring.
+
+## Team Members
+- **Arnav Angarkar** 
+- **Saurav Karki** 
+- **Krishna Sai** 
+- **Gourav Purohit** 
+- **Ranjith Babu** 
+- **Lohith B**
+
+
+![Team NJORD with Director](Team_Dir_Image.jpeg)
+
+## Features
+- Real-time telemetry data monitoring
+- Comprehensive system health tracking
+- Advanced sensor calibration interface
+- Robust MAVLink communication
+- Web-based control interface
+
+## System Specifications
+
+### Connection Parameters
+- **Baud Rate**: 57600 bps
+- **Protocol**: MAVLink 2.0
+- **Connection Type**: Serial/Telemetry
+
+### Monitored Parameters
+1. **Battery Status**
+   - Voltage: 11.8V
+   - Current: 4.2A
+   - Capacity Used: 1240mAh
+   - Time Remaining: ~22min
+   - Charge Level: 78%
+
+2. **Communication Metrics**
+   - Signal Strength: 92%
+   - Link Quality: 98%
+   - Data Rate: 57.6 kbps
+   - Packet Loss: 0.2%
+
+3. **System Health**
+   - CPU Load: 24%
+   - Memory Usage: 32%
+   - Temperature: 32°C
+   - Storage: 45% used
+   - Overall Status: Normal
+
+## Technical Architecture
+
+### Frontend
+- React.js for dynamic UI
+- WebSocket for real-time data updates
+- Chart.js for telemetry visualization
+
+### Backend
+- Python-based MAVLink communication
+- WebSocket server for real-time data transmission
+- JSON-based data storage and retrieval
+
+### Data Flow
+1. MAVLink messages from Pixhawk
+2. Python script processing (`listen.py`)
+3. WebSocket transmission
+4. React frontend visualization
+
+## Installation & Setup
+
+### Prerequisites
+```bash
+# Python dependencies
+pip install pymavlink websockets asyncio json
+
+# Node.js dependencies
+npm install
+```
+
+### Running the System
+1. Start the MAVLink listener:
+```bash
+python3 listen.py --connection /dev/tty.usbserial-* --baud 57600
+```
+
+2. Launch the web interface:
+```bash
+npm run dev
+```
+
+## Monitored Parameters
+
+### Attitude Data
+- Roll, Pitch, Yaw angles
+- Angular velocities
+- Orientation quaternions
+
+### Position Data
+- Local position (NED frame)
+- Global position (GPS coordinates)
+- Velocity vectors
+
+### IMU Data
+- Raw accelerometer readings
+- Gyroscope data
+- Magnetometer measurements
+
+### System Status
+- Heartbeat messages
+- System mode
+- Armed status
+- Flight mode
+
+## Calibration Features
+- Gyroscope calibration
+- Accelerometer calibration
+- Magnetometer calibration
+- Level horizon calibration
+
+## Future Enhancements
+1. Autonomous mission planning
+2. 3D visualization of drone attitude
+3. Advanced flight data logging
+4. Machine learning-based anomaly detection
+5. Enhanced security features
+
+## Acknowledgments
+Special thanks to our Director for their guidance and support in making this project possible.
+
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Contact
+For any queries regarding the project, please contact Team NJORD members.
+
 

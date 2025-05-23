@@ -22,61 +22,32 @@ export class CalibrationService {
     }
   }
 
-  private async sendCalibrationCommand(command: number, param1: number = 0): Promise<void> {
+  private async sendCalibrationCommand(command: number, param1?: number): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.websocket.readyState !== WebSocket.OPEN) {
         reject(new Error('WebSocket is not connected'))
         return
       }
 
-      const message = {
-        command,
-        param1,
-        param2: 0,
-        param3: 0,
-        param4: 0,
-        param5: 0,
-        param6: 0,
-        param7: 0,
-      }
-
+      // Build message object with optional param1
+      const message: { command: number; param1?: number } = { command }
+      if (typeof param1 !== 'undefined') message.param1 = param1
       this.websocket.send(JSON.stringify(message))
       resolve()
     })
   }
 
   async startGyroCalibration(): Promise<void> {
-    return this.sendCalibrationCommand(MAV_CMD.MAV_CMD_PREFLIGHT_CALIBRATION, 1)
-  }
-
-  async startAccelCalibration(): Promise<void> {
-    return this.sendCalibrationCommand(MAV_CMD.MAV_CMD_PREFLIGHT_CALIBRATION, 2)
-  }
-
-  async startMagCalibration(): Promise<void> {
-    return this.sendCalibrationCommand(MAV_CMD.MAV_CMD_PREFLIGHT_CALIBRATION, 4)
-  }
-
-  async startRadioCalibration(): Promise<void> {
-    return this.sendCalibrationCommand(MAV_CMD.MAV_CMD_START_RX_PAIR)
-  }
-
-  async startLevelCalibration(): Promise<void> {
-    return this.sendCalibrationCommand(MAV_CMD.MAV_CMD_PREFLIGHT_CALIBRATION, 8)
-  }
-
-  async cancelCalibration(): Promise<void> {
-    return this.sendCalibrationCommand(MAV_CMD.MAV_CMD_PREFLIGHT_CALIBRATION, 0)
-  }
-
-  // Method to handle calibration progress updates
-  onCalibrationProgress(callback: (progress: number) => void) {
-    this.websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      if (data.type === 'calibration_progress') {
-        callback(data.progress)
-      }
+    if (this.websocket.readyState !== WebSocket.OPEN) {
+      throw new Error('WebSocket is not connected')
     }
+    // 241 (MAV_CMD_PREFLIGHT_CALIBRATION), param1=1
+    return this.sendCalibrationCommand(241, 1)
+  }
+
+  async startBaroCalibration(): Promise<void> {
+    // 222 (MAV_CMD_PREFLIGHT_PRESSURE_CAL)
+    return this.sendCalibrationCommand(222)
   }
 
   // Method to handle calibration status updates
@@ -85,7 +56,12 @@ export class CalibrationService {
       const data = JSON.parse(event.data)
       if (data.type === 'calibration_status') {
         callback(data.status)
+      } else if (data.type === 'status') {
+        // Optionally, handle STATUSTEXT messages for UI feedback
+        callback(data.text)
+      } else if (data.type === 'calibration_ack') {
+        callback(`${data.sensor} calibration ${data.status}`)
       }
     }
   }
-} 
+}

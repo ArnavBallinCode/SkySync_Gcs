@@ -12,7 +12,7 @@ export function Navigation() {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link href="/" className="text-xl font-bold text-white">
-              TEAM <span className="text-blue-400">NJORDE</span>
+              TEAM <span className="text-blue-400">NJORD</span>
             </Link>
           </div>
           <div className="flex space-x-4">
@@ -51,4 +51,4 @@ export function Navigation() {
       </div>
     </nav>
   )
-} 
+}
