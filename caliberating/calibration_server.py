@@ -4,7 +4,7 @@ from pymavlink import mavutil
 import json
 import time
 
-SERIAL_PORT = "/dev/tty.usbserial-D30JKVZM"
+SERIAL_PORT = "/dev/tty.usbmodem01"
 BAUD_RATE = 57600
 
 async def send_status(websocket, status):

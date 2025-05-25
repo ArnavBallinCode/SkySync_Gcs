@@ -21,7 +21,7 @@ logging.basicConfig(
 connected_clients = set()
 
 # Connect to your drone (update connection string as needed)
-master = mavutil.mavlink_connection('/dev/tty.usbserial-D30JKVZM', baud=57600)
+master = mavutil.mavlink_connection('//dev/tty.usbmodem01', baud=57600)
 
 PARAM_TYPES = [
     'ATTITUDE',

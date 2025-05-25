@@ -2,7 +2,7 @@ from pymavlink import mavutil
 import time
 
 # Connection settings
-SERIAL_PORT = "/dev/tty.usbserial-D30JKVZM"
+SERIAL_PORT = "/dev/tty.usbmodem01"
 BAUD_RATE = 57600
 
 def monitor_height():
