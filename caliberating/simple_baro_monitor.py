@@ -5,7 +5,7 @@ import time
 SERIAL_PORT = "/dev/tty.usbserial-D30JKVZM"
 BAUD_RATE = 57600
 
-def monitor_altitude():
+def monitor_height():
     try:
         # Connect to the drone
         print("Connecting to Pixhawk...")
@@ -15,37 +15,21 @@ def monitor_altitude():
         print("Waiting for heartbeat...")
         master.wait_heartbeat(timeout=10)
         print("Connected!")
+        print("\nMonitoring height from ground level...")
+        print("(Press Ctrl+C to stop)")
         
         while True:
-            # Get barometer data
-            baro_msg = master.recv_match(type='SCALED_PRESSURE', blocking=True, timeout=1)
+            # Get height data from ALTITUDE message
+            msg = master.recv_match(type='ALTITUDE', blocking=True, timeout=1)
             
-            # Get altitude data from different messages
-            global_pos = master.recv_match(type='GLOBAL_POSITION_INT', blocking=True, timeout=1)
-            vfr_hud = master.recv_match(type='VFR_HUD', blocking=True, timeout=1)
+            if msg:
+                # altitude_relative is height above home position in meters
+                height = msg.altitude_relative
+                print(f"Height above ground: {height:.2f}m")
+            else:
+                print("Waiting for height data...")
             
-            print("\n=== Altitude Information ===")
-            
-            if baro_msg:
-                pressure = baro_msg.press_abs  # Absolute pressure in hectopascal
-                print(f"Barometric Pressure: {pressure:.2f} hPa")
-            
-            if global_pos:
-                # relative_alt is in millimeters, convert to meters
-                relative_alt = global_pos.relative_alt / 1000.0
-                # alt is absolute altitude in millimeters, convert to meters
-                absolute_alt = global_pos.alt / 1000.0
-                print(f"Relative Altitude (from home): {relative_alt:.2f} meters")
-                print(f"Absolute Altitude (MSL): {absolute_alt:.2f} meters")
-            
-            if vfr_hud:
-                # VFR_HUD altitude in meters
-                vfr_alt = vfr_hud.alt
-                print(f"VFR Altitude: {vfr_alt:.2f} meters")
-            
-            print("=========================")
-            
-            time.sleep(10)  # Wait for 30 seconds before next reading
+            time.sleep(5)  # Wait for 5 seconds before next reading
             
     except KeyboardInterrupt:
         print("\nProgram stopped by user")
@@ -58,4 +42,4 @@ def monitor_altitude():
             pass
 
 if __name__ == "__main__":
-    monitor_altitude() 
+    monitor_height() 
