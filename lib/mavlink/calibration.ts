@@ -1,67 +1,92 @@
 import { MAV_CMD } from './mavlink-enums'
 
 export class CalibrationService {
-  private websocket: WebSocket
+  private ws: WebSocket | null = null;
+  private statusCallback: ((status: string) => void) | null = null;
+  private url: string;
+  private connectionAttempts = 0;
+  private maxAttempts = 3;
 
-  constructor(websocketUrl: string) {
-    this.websocket = new WebSocket(websocketUrl)
-    this.setupWebSocket()
+  constructor(url: string) {
+    this.url = url;
+    this.connect();
   }
 
-  private setupWebSocket() {
-    this.websocket.onopen = () => {
-      console.log('WebSocket connection established')
-    }
-
-    this.websocket.onerror = (error) => {
-      console.error('WebSocket error:', error)
-    }
-
-    this.websocket.onclose = () => {
-      console.log('WebSocket connection closed')
-    }
-  }
-
-  private async sendCalibrationCommand(command: number, param1?: number): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (this.websocket.readyState !== WebSocket.OPEN) {
-        reject(new Error('WebSocket is not connected'))
-        return
+  private connect() {
+    if (this.connectionAttempts >= this.maxAttempts) {
+      if (this.statusCallback) {
+        this.statusCallback('failed: Maximum connection attempts reached');
       }
-
-      // Build message object with optional param1
-      const message: { command: number; param1?: number } = { command }
-      if (typeof param1 !== 'undefined') message.param1 = param1
-      this.websocket.send(JSON.stringify(message))
-      resolve()
-    })
-  }
-
-  async startGyroCalibration(): Promise<void> {
-    if (this.websocket.readyState !== WebSocket.OPEN) {
-      throw new Error('WebSocket is not connected')
+      return;
     }
-    // 241 (MAV_CMD_PREFLIGHT_CALIBRATION), param1=1
-    return this.sendCalibrationCommand(241, 1)
+
+    try {
+      this.ws = new WebSocket(this.url);
+      
+      this.ws.onopen = () => {
+        console.log('WebSocket connected successfully');
+        this.connectionAttempts = 0;
+      };
+
+      this.ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.status && this.statusCallback) {
+            this.statusCallback(data.status);
+          }
+        } catch (error) {
+          console.error('Error parsing WebSocket message:', error);
+        }
+      };
+
+      this.ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        if (this.statusCallback) {
+          this.statusCallback('failed: WebSocket connection error');
+        }
+      };
+
+      this.ws.onclose = () => {
+        console.log('WebSocket connection closed');
+        if (this.statusCallback) {
+          this.statusCallback('failed: WebSocket connection closed');
+        }
+        // Try to reconnect after a delay
+        this.connectionAttempts++;
+        setTimeout(() => this.connect(), 2000);
+      };
+    } catch (error) {
+      console.error('Error creating WebSocket:', error);
+      if (this.statusCallback) {
+        this.statusCallback('failed: Could not create WebSocket connection');
+      }
+    }
   }
 
-  async startBaroCalibration(): Promise<void> {
-    // 222 (MAV_CMD_PREFLIGHT_PRESSURE_CAL)
-    return this.sendCalibrationCommand(222)
-  }
-
-  // Method to handle calibration status updates
   onCalibrationStatus(callback: (status: string) => void) {
-    this.websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data)
-      if (data.type === 'calibration_status') {
-        callback(data.status)
-      } else if (data.type === 'status') {
-        // Optionally, handle STATUSTEXT messages for UI feedback
-        callback(data.text)
-      } else if (data.type === 'calibration_ack') {
-        callback(`${data.sensor} calibration ${data.status}`)
+    this.statusCallback = callback;
+  }
+
+  private ensureConnection(): boolean {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      if (this.statusCallback) {
+        this.statusCallback('failed: WebSocket not connected');
       }
+      this.connect();
+      return false;
+    }
+    return true;
+  }
+
+  startGyroCalibration() {
+    if (this.ensureConnection()) {
+      this.ws!.send(JSON.stringify({ command: 'gyro_calibration' }));
+    }
+  }
+
+  startBaroCalibration() {
+    if (this.ensureConnection()) {
+      this.ws!.send(JSON.stringify({ command: 'baro_calibration' }));
     }
   }
 }

@@ -64,13 +64,13 @@ export default function AboutPage() {
           <h2 className="text-2xl font-semibold mb-4 text-blue-400">Team Members</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { name: 'Saurav Karki', role: 'Hardware Integration & Communication Systems' },
-              { name: 'Krishna Sai Gollamudi', role: 'Software Development & UI/UX Design' },
-              { name: 'Amith Mathew', role: 'Mechanical Design & Integration' },
-              { name: 'Arnav Angarkar', role: 'Lead Developer & System Architecture' },
-              { name: 'Ranjith Babu', role: 'Testing & Documentation' },
-              { name: 'Gourav Purohit', role: 'Data Analytics & Sensor Integration' },
-              { name: 'Lohith .B', role: 'Hardware Testing & Calibration' }
+              { name: 'Saurav Karki' },
+              { name: 'Krishna Sai Gollamudi' },
+              { name: 'Amith Mathew' },
+              { name: 'Arnav Angarkar' },
+              { name: 'Ranjith Babu'},
+              { name: 'Gourav Purohit' },
+              { name: 'Lohith .B' }
             ].map((member) => (
               <div
                 key={member.name}
