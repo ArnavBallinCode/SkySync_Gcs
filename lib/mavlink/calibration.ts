@@ -2,91 +2,83 @@ import { MAV_CMD } from './mavlink-enums'
 
 export class CalibrationService {
   private ws: WebSocket | null = null;
-  private statusCallback: ((status: string) => void) | null = null;
-  private url: string;
-  private connectionAttempts = 0;
-  private maxAttempts = 3;
+  private statusCallback: ((status: string, progress?: number) => void) | null = null;
+  private reconnectAttempts = 0;
+  private maxReconnectAttempts = 5;
+  private reconnectDelay = 1000;
 
-  constructor(url: string) {
-    this.url = url;
+  constructor(private wsUrl: string) {
     this.connect();
   }
 
   private connect() {
-    if (this.connectionAttempts >= this.maxAttempts) {
-      if (this.statusCallback) {
-        this.statusCallback('failed: Maximum connection attempts reached');
-      }
-      return;
-    }
-
     try {
-      this.ws = new WebSocket(this.url);
+      this.ws = new WebSocket(this.wsUrl);
       
       this.ws.onopen = () => {
-        console.log('WebSocket connected successfully');
-        this.connectionAttempts = 0;
+        console.log('Connected to calibration server');
+        this.reconnectAttempts = 0;
       };
 
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.status && this.statusCallback) {
-            this.statusCallback(data.status);
+          if (this.statusCallback) {
+            // Extract progress from status message if available
+            let progress: number | undefined;
+            if (data.progress !== undefined) {
+              progress = data.progress;
+            } else if (data.status.includes('Progress:')) {
+              const match = data.status.match(/Progress: (\d+)%/);
+              if (match) {
+                progress = parseInt(match[1]);
+              }
+            }
+            this.statusCallback(data.status, progress);
           }
-        } catch (error) {
-          console.error('Error parsing WebSocket message:', error);
-        }
-      };
-
-      this.ws.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        if (this.statusCallback) {
-          this.statusCallback('failed: WebSocket connection error');
+        } catch (e) {
+          console.error('Error parsing message:', e);
         }
       };
 
       this.ws.onclose = () => {
-        console.log('WebSocket connection closed');
-        if (this.statusCallback) {
-          this.statusCallback('failed: WebSocket connection closed');
-        }
-        // Try to reconnect after a delay
-        this.connectionAttempts++;
-        setTimeout(() => this.connect(), 2000);
+        console.log('Disconnected from calibration server');
+        this.attemptReconnect();
       };
-    } catch (error) {
-      console.error('Error creating WebSocket:', error);
-      if (this.statusCallback) {
-        this.statusCallback('failed: Could not create WebSocket connection');
-      }
+
+      this.ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+    } catch (e) {
+      console.error('Connection error:', e);
+      this.attemptReconnect();
     }
   }
 
-  onCalibrationStatus(callback: (status: string) => void) {
-    this.statusCallback = callback;
+  private attemptReconnect() {
+    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+      this.reconnectAttempts++;
+      console.log(`Attempting to reconnect (${this.reconnectAttempts}/${this.maxReconnectAttempts})...`);
+      setTimeout(() => this.connect(), this.reconnectDelay * this.reconnectAttempts);
+    }
   }
 
   private ensureConnection(): boolean {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) {
-      if (this.statusCallback) {
-        this.statusCallback('failed: WebSocket not connected');
-      }
-      this.connect();
+      console.error('WebSocket is not connected');
+      this.statusCallback?.('WebSocket connection error. Please refresh the page.', 0);
       return false;
     }
     return true;
   }
 
-  startGyroCalibration() {
-    if (this.ensureConnection()) {
-      this.ws!.send(JSON.stringify({ command: 'gyro_calibration' }));
-    }
+  onCalibrationStatus(callback: (status: string, progress?: number) => void) {
+    this.statusCallback = callback;
   }
 
-  startBaroCalibration() {
+  startCalibration(command: string) {
     if (this.ensureConnection()) {
-      this.ws!.send(JSON.stringify({ command: 'baro_calibration' }));
+      this.ws!.send(JSON.stringify({ command }));
     }
   }
 }

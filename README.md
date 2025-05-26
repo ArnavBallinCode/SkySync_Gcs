@@ -274,4 +274,233 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Contact
 For any queries regarding the project, please contact Team NJORD members.
 
+## Quick Start
+
+1. Start MAVProxy with UDP forwarding:
+```bash
+mavproxy.py --master=/dev/tty.usbserial-D30JKVZM --baud=57600 --out=udp:localhost:14550 --out=udp:localhost:14551
+```
+
+2. Start the calibration server:
+```bash
+python3 caliberating/calibration_server.py
+```
+
+3. Start the web interface:
+```bash
+npm run dev
+```
+
+4. Open http://localhost:3000 in your browser
+
+## Important Notes
+- Always start MAVProxy first with UDP forwarding
+- The calibration server will connect to the UDP port instead of directly to the serial port
+- This allows multiple applications to communicate with the drone simultaneously
+
+# Drone Web Interface
+
+## 🚀 Quick Start Guide
+
+### Prerequisites
+1. Install Node.js (LTS version) from [nodejs.org](https://nodejs.org/)
+2. Install Python 3.8+ from [python.org](https://python.org)
+3. Install MAVProxy:
+```bash
+# On macOS
+brew install mavproxy
+
+# On Ubuntu/Debian
+sudo apt-get install python3-pip python3-dev
+pip3 install MAVProxy
+
+# On Windows
+pip install MAVProxy
+```
+
+### Step 1: Install Dependencies
+```bash
+# 1. Clone the repository
+git clone https://github.com/ArnavBallinCode/Drone_Web_9009.git
+cd Drone_Web_9009
+
+# 2. Install Python dependencies
+pip install pymavlink websockets asyncio pyserial
+
+# 3. Install Node.js dependencies
+npm install
+# or if using pnpm
+pnpm install
+```
+
+### Step 2: Connect Your Drone
+1. Connect your Pixhawk/drone via USB
+2. Identify the correct port:
+```bash
+# On macOS/Linux
+ls /dev/tty.*
+# Look for something like /dev/tty.usbserial-D30JKVZM
+
+# On Windows
+# Check Device Manager under "Ports (COM & LPT)"
+# Look for something like COM3
+```
+
+### Step 3: Start the System
+
+#### 1. Start MAVProxy (REQUIRED FIRST)
+```bash
+# On macOS/Linux
+mavproxy.py --master=/dev/tty.usbserial-D30JKVZM --baud=57600 --out=udp:localhost:14550 --out=udp:localhost:14551
+
+# On Windows
+mavproxy.py --master=COM3 --baud=57600 --out=udp:localhost:14550 --out=udp:localhost:14551
+
+# You should see:
+# "Connecting to SITL on TCP port 5760"
+# "Received heartbeat from APM"
+```
+
+#### 2. Start the Telemetry Listener
+Open a new terminal and run:
+```bash
+# On macOS/Linux
+python3 listen.py --connection /dev/tty.usbserial-D30JKVZM --baud 57600
+
+# On Windows
+python listen.py --connection COM3 --baud 57600
+
+# You should see:
+# "Connected to drone"
+# "Writing telemetry data..."
+```
+
+#### 3. Start the Calibration Server
+Open another new terminal and run:
+```bash
+# On macOS/Linux
+python3 caliberating/calibration_server.py
+
+# On Windows
+python caliberating/calibration_server.py
+
+# You should see:
+# "Starting WebSocket server..."
+# "Calibration WebSocket server started on ws://localhost:8765"
+```
+
+#### 4. Start the Web Interface
+Open another new terminal and run:
+```bash
+# Using npm
+npm run dev
+
+# Using pnpm
+pnpm dev
+
+# You should see:
+# "ready - started server on 0.0.0.0:3000"
+```
+
+### Step 4: Access the Interface
+1. Open your browser and go to:
+   - Main interface: http://localhost:3000
+   - Calibration page: http://localhost:3000/calibration
+
+### Calibration Instructions
+
+1. **Gyroscope Calibration**
+   - Keep the drone completely still on a level surface
+   - Click "Start Gyro Calibration"
+   - Wait for completion (about 30 seconds)
+
+2. **Accelerometer Calibration**
+   - Click "Start Accelerometer Calibration"
+   - Follow the orientation instructions:
+     1. Place vehicle level
+     2. On right side
+     3. On left side
+     4. Nose down
+     5. Nose up
+     6. On its back
+   - Hold each position until you see "Position detected"
+   - Wait for "Position calibrated successfully" before moving to next position
+
+3. **Magnetometer Calibration**
+   - Click "Start Magnetometer Calibration"
+   - Rotate the drone around all axes
+   - Continue rotation for at least 30 seconds
+   - Keep away from metal objects
+   - Wait for completion message
+
+4. **Barometer Calibration**
+   - Keep the drone still
+   - Click "Start Barometer Calibration"
+   - Wait for completion (about 30 seconds)
+
+### Troubleshooting
+
+1. **No Serial Port Connection**
+   ```bash
+   # List all serial ports
+   python3 -m serial.tools.list_ports
+   ```
+
+2. **MAVProxy Connection Issues**
+   - Ensure no other program is using the serial port
+   - Try different baud rates: 57600, 115200, 921600
+   - Check USB connection
+
+3. **Calibration Server Issues**
+   - Ensure MAVProxy is running first
+   - Check if port 8765 is free:
+     ```bash
+     # On macOS/Linux
+     lsof -i :8765
+     # On Windows
+     netstat -ano | findstr :8765
+     ```
+
+4. **Web Interface Issues**
+   - Clear browser cache
+   - Check console for errors (F12)
+   - Ensure all servers are running
+
+### Port Reference
+- MAVProxy UDP outputs: 14550, 14551
+- Calibration WebSocket: 8765
+- Web Interface: 3000 (or 3001)
+
+### Command Summary
+```bash
+# All commands needed (in order):
+mavproxy.py --master=/dev/tty.usbserial-D30JKVZM --baud=57600 --out=udp:localhost:14550 --out=udp:localhost:14551
+python3 listen.py --connection /dev/tty.usbserial-D30JKVZM --baud 57600
+python3 caliberating/calibration_server.py
+pnpm dev  # or npm run dev
+```
+
+### System Requirements
+- Python 3.8+
+- Node.js 16+
+- Modern web browser (Chrome, Firefox, Safari)
+- USB port for drone connection
+- 2GB RAM minimum
+- 1GB free disk space
+
+### File Structure
+```
+Drone_Web_9009/
+├── caliberating/
+│   └── calibration_server.py  # WebSocket calibration server
+├── public/
+│   └── params/               # Telemetry JSON files
+├── app/
+│   └── calibration/         # Calibration UI components
+├── lib/
+│   └── mavlink/            # MAVLink utilities
+├── listen.py               # Telemetry listener
+└── package.json           # Node.js dependencies
+```
+
 
