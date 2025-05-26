@@ -503,4 +503,92 @@ Drone_Web_9009/
 └── package.json           # Node.js dependencies
 ```
 
+### PX4 vs ArduPilot Configuration
+
+#### PX4-Specific Setup
+1. **Connection Settings**
+   ```bash
+   # For PX4, use these MAVProxy settings:
+   mavproxy.py --master=/dev/tty.usbserial-D30JKVZM --baud=921600 --out=udp:localhost:14550 --out=udp:localhost:14551
+   ```
+   Note: PX4 typically uses 921600 baud rate by default
+
+2. **Calibration Commands**
+   - PX4 uses slightly different calibration parameters:
+     ```python
+     # Gyroscope
+     params = [1, 0, 0, 0, 0, 0, 0]  # Same as ArduPilot
+
+     # Accelerometer
+     params = [0, 0, 0, 0, 4, 0, 0]  # Note: Uses 4 instead of 1 for simple calibration
+
+     # Magnetometer
+     params = [0, 1, 0, 0, 0, 0, 0]  # Same as ArduPilot
+
+     # Level Horizon
+     params = [0, 0, 0, 0, 2, 0, 0]  # Note: Uses 2 for level calibration
+     ```
+
+3. **Status Messages**
+   - PX4 uses different status message formats:
+     - "[cal] progress <percentage>"
+     - "[cal] orientation detected"
+     - "[cal] calibration done: <sensor>"
+     - "CAL FAILED" for failures
+
+4. **Additional PX4 Parameters**
+   ```bash
+   # Set calibration auto-save (optional)
+   param set CAL_AUTO_SAVE 1
+
+   # Set QGC core as remote (recommended)
+   param set MAV_COMP_ID 190
+   param set MAV_SYS_ID 255
+   ```
+
+5. **Troubleshooting PX4**
+   - If calibration fails immediately:
+     ```bash
+     # Check if the drone is armed
+     # PX4 requires disarming for calibration
+     commander disarm
+     ```
+   - If no messages appear:
+     ```bash
+     # Enable verbose output
+     param set SYS_MC_EST_GROUP 2
+     param set SENS_BOARD_ROT 0
+     ```
+
+### System Compatibility
+
+Feature | ArduPilot | PX4
+--------|-----------|-----
+Default Baud Rate | 57600 | 921600
+Calibration Messages | [cal] prefix | Various formats
+Auto-save Calibration | Always | Configurable
+Level Calibration | Part of Accel | Separate command
+Simple Accel Cal | Value: 1 | Value: 4
+Status Updates | Frequent | On state change
+UDP Forwarding | Optional | Recommended
+
+### Common PX4 Issues
+
+1. **No Calibration Response**
+   - Ensure drone is disarmed
+   - Check parameter `CAL_AUTO_SAVE`
+   - Verify `SYS_MC_EST_GROUP` setting
+
+2. **Connection Issues**
+   ```bash
+   # For PX4, try these settings:
+   mavproxy.py --master=/dev/tty.usbserial-D30JKVZM --baud=921600 --source-system=255 --source-component=190 --out=udp:localhost:14550 --out=udp:localhost:14551
+   ```
+
+3. **Calibration Timeouts**
+   - PX4 may need longer timeouts:
+     ```python
+     CALIBRATION_TIMEOUT = 180  # Increase from 120 to 180 seconds
+     ```
+
 
