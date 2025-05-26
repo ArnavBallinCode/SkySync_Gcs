@@ -51,6 +51,11 @@ const routes = [
     icon: WrenchIcon,
     href: "/calibration",
   },
+  {
+    title: "Logs",
+    icon: BarChart2Icon, // You can use a more appropriate icon if desired
+    href: "/logs",
+  },
 ]
 
 interface SidebarNavProps {
@@ -87,4 +92,4 @@ export function SidebarNav({ className, isCollapsed }: SidebarNavProps) {
       </ScrollArea>
     </div>
   )
-} 
+}
