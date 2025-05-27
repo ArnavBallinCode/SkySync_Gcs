@@ -31,7 +31,7 @@ Drone_Web_9009 is the next-generation web-based **UAV telemetry dashboard**, dev
    - The React-based frontend reads these JSON files and updates the UI dynamically.  
 
 2️⃣ **Calibration Workflow (WebSocket-based)**
-   - The frontend calibration UI connects to a Python WebSocket server (`calibration_ws_server.py`) at `ws://localhost:8765`.
+   - The frontend calibration UI connects to a Python WebSocket server (`calibration_server.py`) at `ws://localhost:8765`.
    - When you trigger a calibration (Gyro, Accel, Compass, Radio, Level) from the UI, a command is sent over WebSocket.
    - The backend receives the command and sends the appropriate MAVLink calibration command to the drone via `/dev/tty.usbserial-<ID>`.
    - The backend sends status/progress updates back to the frontend, which are displayed in real time (just like Mission Planner).
@@ -91,7 +91,7 @@ pip install websockets pymavlink
 ```
 2️⃣ Start the calibration server:
 ```sh
-python calibration_ws_server.py
+python calibration_server.py
 ```
 - The server will connect to your drone via `/dev/tty.usbserial-D30JKVZM` at 57600 baud.
 - It will listen for calibration commands from the frontend on `ws://localhost:8765`.
