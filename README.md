@@ -1,6 +1,4 @@
-Certainly! Here's a detailed, corporate-style, forward-looking README in markdown format tailored for the **Windows** version of SkySync GCS. It combines innovation-driven jargon, professional tone, and thorough coverage for installation, usage, and architecture.
 
-````markdown
 # <img src="Logo.png" alt="SkySync GCS Logo" width="50" height="50"/> SkySync GCS (Windows Edition)
 
 **Cutting-Edge Ground Control Station for Real-Time UAV Telemetry, Visualization, and Calibration**
