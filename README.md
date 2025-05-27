@@ -269,7 +269,7 @@ npm run dev
 Special thanks to our Director for their guidance and support in making this project possible.
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License - see the LICENSE file for details.
 
 ## Contact
 For any queries regarding the project, please contact Team NJORD members.
@@ -286,7 +286,14 @@ mavproxy.py --master=/dev/tty.usbserial-D30JKVZM --baud=57600 --out=udp:localhos
 python3 caliberating/calibration_server.py
 ```
 
-3. Start the web interface:
+3. Start the Listening Server:
+```bash
+python3 listen.py
+```
+
+
+
+4. Start the web interface:
 ```bash
 npm run dev
 ```
