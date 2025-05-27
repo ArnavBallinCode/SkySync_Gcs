@@ -22,11 +22,31 @@ WS_PORT = 8765
 CALIBRATION_TIMEOUT = 120
 
 def connect_to_drone():
-    """Connect to the drone via UDP"""
+    """Connect to the drone via UDP or Serial"""
     try:
-        # Connect to UDP
+        # Try serial connection first
+        ports = serial.tools.list_ports.comports()
+        for port in ports:
+            if "COM18" in port.device:  # Using COM18 as we know it's our telemetry port
+                connection_string = f'com:{port.device}'
+                logging.info(f"Attempting serial connection to {connection_string}")
+                master = mavutil.mavlink_connection(
+                    connection_string,
+                    baud=57600,
+                    source_system=SYSTEM_ID,
+                    source_component=COMPONENT_ID
+                )
+                # Wait for heartbeat
+                logging.info("Waiting for heartbeat...")
+                heartbeat = master.wait_heartbeat(timeout=5)
+                if heartbeat:
+                    logging.info(f"Connected via serial! System ID: {master.target_system}, Component ID: {master.target_component}")
+                    return master
+                master.close()
+        
+        # If serial fails, try UDP
         connection_string = f'udpin:localhost:{UDP_PORT}'
-        logging.info(f"Connecting to {connection_string}")
+        logging.info(f"Attempting UDP connection to {connection_string}")
         
         master = mavutil.mavlink_connection(
             connection_string,
@@ -38,7 +58,7 @@ def connect_to_drone():
         logging.info("Waiting for heartbeat...")
         heartbeat = master.wait_heartbeat(timeout=5)
         if heartbeat:
-            logging.info(f"Connected! System ID: {master.target_system}, Component ID: {master.target_component}")
+            logging.info(f"Connected via UDP! System ID: {master.target_system}, Component ID: {master.target_component}")
             return master
         else:
             logging.error("No heartbeat received")
