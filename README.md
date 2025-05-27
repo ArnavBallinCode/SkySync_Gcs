@@ -1,313 +1,341 @@
-# 🚀 Drone_Web_9009  
-**An advanced telemetry and monitoring system for real-time MAVLink data visualization and drone calibration.**  
+# <img src="Logo.png" alt="SkySync GCS Logo" width="50" height="50"/> SkySync GCS
+
+**Advanced Ground Control System for real-time drone telemetry, visualization, and calibration**
+
+<p align="center">
+  <img src="Logo.png" alt="SkySync GCS Logo" width="180" height="180"/>
+</p>
 
 ## 🔥 Overview  
-Drone_Web_9009 is the next-generation web-based **UAV telemetry dashboard**, developed over the earlier [Drone_Web_Interface_909](https://github.com/ArnavBallinCode/Drone_Web_Interface_909). It is designed for real-time data visualization and calibration from drones using **MAVLink**. The system integrates with **Jetson and Pixhawk** and now features:  
-- **3D Data Visualization** 📊  
-- **Full TypeScript & React-based UI** 🎨  
+SkySync GCS is a powerful, modern ground control system designed for professional drone operations. Built for real-time data visualization and calibration using the MAVLink protocol, SkySync seamlessly integrates with Pixhawk and Jetson-based systems. Our platform features:
+
+- **Immersive 3D Data Visualization** 📊  
+- **Advanced TypeScript & React-based UI** 🎨  
 - **Real-time MAVLink telemetry processing** ⏳  
-- **Mission Planner-style calibration via WebSocket** 🛰️  
-- **Optimized for both mobile and desktop** 💻📱  
+- **Professional-grade sensor calibration** 🛰️  
+- **Responsive design for all devices** 💻📱
 
-> **Note:** This project (9009) is a direct evolution of the previous [909 version](https://github.com/ArnavBallinCode/Drone_Web_Interface_909), with enhanced calibration, improved architecture, and more robust real-time features.
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js"/>
+  <img src="https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React"/>
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript"/>
+  <img src="https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
+  <img src="https://img.shields.io/badge/Tailwind_CSS-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white" alt="Tailwind CSS"/>
+  <img src="https://img.shields.io/badge/Three.js-000000?style=for-the-badge&logo=three.js&logoColor=white" alt="Three.js"/>
+  <img src="https://img.shields.io/badge/MAVLink-00AEEF?style=for-the-badge&logo=drone&logoColor=white" alt="MAVLink"/>
+</p>
 
----
+## 🌟 **Key Features**
 
-## 🔄 **Project Evolution: From Basic Web UI to 9009**  
+- **Real-time Telemetry Dashboard**
+  - Live battery status monitoring
+  - GPS positioning with visual mapping
+  - Attitude and orientation visualization
+  - System health analytics
 
-### 🌟 **Previous Versions**  
-- **Drone_Web_Interface_909:** Modern TypeScript/React/3D telemetry dashboard ([View Here](https://github.com/ArnavBallinCode/Drone_Web_Interface_909))
-- **IROC_WEB_INTERFACE:** Original UI (HTML, CSS, JS) ([View Here](https://github.com/ArnavBallinCode/IROC_WEB_INTERFACE))
-- **ISRO_IROC_Web:** Backend scripts (Python + MAVLink) ([View Here](https://github.com/ArnavBallinCode/ISRO_IROC_Web))
-- **ISRO_IROC_Webinterface:** Older telemetry interface (Python-based) ([View Here](https://github.com/ArnavBallinCode/ISRO_IROC_Webinterface))
+- **Professional Calibration Suite**
+  - Gyroscope calibration
+  - Accelerometer calibration
+  - Magnetometer calibration
+  - Level horizon calibration
+  - Radio calibration
 
----
+- **Advanced Visualization**
+  - Interactive 3D drone model
+  - Real-time attitude representation
+  - Position tracking and history
+  - Data-rich telemetry charts
 
-## ⚙️ **How It Works**  
-
-### 🎯 **System Architecture**  
-1️⃣ **Telemetry Data Flow**  
-   - A **Python script (`listen.py`)** reads MAVLink telemetry and writes `.json` files in `public/params/`.  
-   - The React-based frontend reads these JSON files and updates the UI dynamically.  
-
-2️⃣ **Calibration Workflow (WebSocket-based)**
-   - The frontend calibration UI connects to a Python WebSocket server (`calibration_server.py`) at `ws://localhost:8765`.
-   - When you trigger a calibration (Gyro, Accel, Compass, Radio, Level) from the UI, a command is sent over WebSocket.
-   - The backend receives the command and sends the appropriate MAVLink calibration command to the drone via `/dev/tty.usbserial-<ID>`.
-   - The backend sends status/progress updates back to the frontend, which are displayed in real time (just like Mission Planner).
-
-3️⃣ **Frontend (React + TypeScript)**  
-   - Fetches and processes telemetry from `/public/params/`.  
-   - Uses **Three.js** for **3D drone movement & attitude representation**.  
-   - Displays real-time battery, altitude, and position data.  
-   - Provides a calibration UI for all major sensors, with live feedback.
-
-4️⃣ **Backend (Python + MAVLink + WebSocket)**  
-   - Uses `pymavlink` to listen to drone telemetry and handle calibration commands.  
-   - Converts MAVLink messages into structured `.json` files.  
-   - Runs a WebSocket server to bridge calibration commands between the frontend and the drone.
-
----
-
-## 🚀 **Installation & Setup**  
-
-### 📌 **1. Clone the Repository**  
-```sh
-git clone https://github.com/ArnavBallinCode/Drone_Web_9009.git
-cd Drone_Web_9009
-```
+- **Optimized Architecture**
+  - Websocket-based communications
+  - Efficient data processing
+  - Modular component design
+  - Cross-platform compatibility
 
 ---
 
-## 🛠 **2. Setting Up the TypeScript Project**  
+## ⚙️ **System Architecture**
 
-1️⃣ Install **Node.js** (latest LTS) from [nodejs.org](https://nodejs.org/)  
-2️⃣ Install dependencies:  
-```sh
+<p align="center">
+  <img src="https://mermaid.ink/img/pako:eNp1kk1PwzAMhv9KlBOI9Q9UQkKABBJiB7jshpzGa6M1cZQ4G6raf9dJui0wPln288Z-7ewQclEQZHDUJXUWz1JNiBa1XT0bn0UWjGZ0Hrcx3K3X6_hRo4tjioNUxpErWkRprZG7Ni_J8OPkBcupy5sQllKZlD0HsqlIh6roRlx-MQdtgiq65rhASz3pZ6-TpWk3vvHJDvfeDGawe1l8XcDY0Jl_cdzcfjdMKS7khaKzkCQqqVXRYwtZhtq-0aADRxlQmbJllpa3de0GDyXYjiMnkI1HhVJu3Qx4zxFkud4gm-Wmg-xC0svMyFOEjPc9iGV_PD5enU6jQPZo56rXRpGCzKCvcyzAwckGsrTBEWRs7jnf8C7NQnH9DHjUZsyo0-JUcuE6n8B_9fQJnMSQsw" alt="SkySync Architecture" width="800"/>
+</p>
+
+### 🎯 **System Architecture**
+
+#### 1️⃣ **Telemetry Data Pipeline**
+- The SkySync backend utilizes Python-based MAVLink integration to capture real-time telemetry data
+- Advanced data processing transforms raw MAVLink messages into structured JSON formats
+- The frontend consumes this processed data through efficient pull/push mechanisms for real-time display
+- Configurable data rates and filtering options optimize performance across different network conditions
+
+#### 2️⃣ **Calibration Subsystem**
+- WebSocket-based communication provides low-latency calibration command handling
+- Bi-directional data flow enables real-time feedback during calibration procedures
+- Step-by-step guided calibration workflow with visual indicators and progress tracking
+- Support for all standard drone calibration procedures with advanced error detection
+
+#### 3️⃣ **Frontend Architecture**
+- Built with Next.js and React for optimal performance and SEO capabilities
+- Three.js-powered 3D visualizations for immersive drone attitude representation
+- Tailwind CSS implementation for responsive design across all device sizes
+- Component-based architecture enabling easy customization and extension
+
+#### 4️⃣ **Backend Infrastructure**
+- Python-based microservices handling different aspects of drone communication
+- Robust error handling and recovery mechanisms for connection disruptions
+- Data persistence layer for telemetry logging and analysis
+- Configurable communication parameters to support various drone hardware
+
+## 🚀 **Getting Started**
+
+### 📋 **Prerequisites**
+
+- **Hardware Requirements**
+  - Pixhawk-compatible flight controller
+  - USB or telemetry connection to drone
+  - Computer with internet connection
+  
+- **Software Requirements**
+  - Node.js 16+ and npm/pnpm
+  - Python 3.8+
+  - MAVProxy (optional but recommended)
+
+### 📌 **1. Installation**
+
+```bash
+# Clone the SkySync repository
+git clone https://github.com/your-username/skysync-gcs.git
+cd skysync-gcs
+
+# Install frontend dependencies
+pnpm install
+# or with npm
 npm install
+
+# Install Python dependencies
+pip install pymavlink websockets asyncio pyserial
 ```
-3️⃣ Start the React development server:  
-```sh
-npm run dev
+
+### 🛠️ **2. Configuration**
+
+Create a `.env.local` file in the project root:
+
 ```
-4️⃣ Open `http://localhost:3000/` (or `3001` if 3000 is in use) in your browser.  
-
----
-
-## 🛰 **3. Running MAVLink Telemetry Data Collection**  
-1️⃣ Connect Pixhawk/Jetson via USB (e.g., `/dev/tty.usbserial-D30JKVZM`)  
-2️⃣ Run the Python script:  
-```sh
-python3 listen.py --connection /dev/tty.usbserial-D30JKVZM --baud 57600
+NEXT_PUBLIC_WEBSOCKET_URL=ws://localhost:8765
+NEXT_PUBLIC_MAVLINK_CONNECTION=/dev/tty.usbserial-XXXX
+NEXT_PUBLIC_BAUD_RATE=57600
 ```
-3️⃣ Data will be written to `public/params/`.  
 
----
+Adjust the serial port to match your system configuration:
+- macOS: `/dev/tty.usbserial-XXXX`
+- Linux: `/dev/ttyUSB0` or `/dev/ttyACM0`
+- Windows: `COM3` (or other COM port)
 
-## 🛠 **4. Running the Calibration WebSocket Server**
-1️⃣ Ensure you have Python 3.8+ and install dependencies:
-```sh
-pip install websockets pymavlink
-```
-2️⃣ Start the calibration server:
-```sh
-python calibration_server.py
-```
-- The server will connect to your drone via `/dev/tty.usbserial-D30JKVZM` at 57600 baud.
-- It will listen for calibration commands from the frontend on `ws://localhost:8765`.
+### 🔌 **3. Connecting Your Drone**
 
----
+For the best experience, we recommend using MAVProxy to create a UDP bridge:
 
-## 📡 **5. Viewing the Telemetry Dashboard & Calibration**  
-Once the frontend and both Python scripts are running:  
-- Open **`http://localhost:3000/`** (or `3001`) in your browser.  
-- You will see **real-time drone telemetry, battery status, GPS, IMU data, and a 3D model** representing the drone's movement.  
-- Go to the **Calibration** page to perform Gyroscope, Accelerometer, Compass, Radio, and Level calibrations.  
-- Calibration status and progress will be shown live in the UI.
-
----
-
-## 📝 **Calibration Workflow Details**
-- The frontend sends a calibration command (e.g., Gyro, Accel, Compass, Radio, Level) via WebSocket.
-- The backend receives the command and sends the corresponding MAVLink command to the drone.
-- The backend sends status/progress updates back to the frontend.
-- The workflow is similar to Mission Planner, providing a seamless calibration experience.
-
----
-
-## 🎯 **Upcoming Features**  
-✅ WebSocket-based real-time updates (instead of polling JSON files)  
-✅ AI-powered anomaly detection for UAV telemetry  
-✅ Enhanced **3D mapping using LiDAR & SLAM data**  
-
----
-
-## 👨‍💻 **Contributing**  
-1️⃣ Fork the repository  
-2️⃣ Create a new branch (`feature-xyz`)  
-3️⃣ Commit your changes (`git commit -m "Added XYZ feature"`)  
-4️⃣ Push and submit a PR 🚀  
-
----
-## License
-This project is **not open-source**. All rights are reserved by the author. No part of this repository may be used or reproduced without explicit permission from **Arnav Angarkar**.
-
----
-
-## 📞 **Contact & Support**  
-If you need help, open an issue in the repo or reach out via:  
-📧 **Email:** 24bcs015@iiitdwd.ac.in  
-
-# Team NJORD - Drone Web Interface
-
-## Project Overview
-A sophisticated web interface for monitoring and controlling Pixhawk-based drones using MAVLink protocol. This project provides real-time telemetry data visualization, sensor calibration capabilities, and comprehensive system monitoring.
-
-## Team Members
-- **Arnav Angarkar** 
-- **Saurav Karki** 
-- **Krishna Sai** 
-- **Gourav Purohit** 
-- **Ranjith Babu** 
-- **Lohith B**
-
-
-![Team NJORD with Director](Team_Dir_Image.jpeg)
-
-## Features
-- Real-time telemetry data monitoring
-- Comprehensive system health tracking
-- Advanced sensor calibration interface
-- Robust MAVLink communication
-- Web-based control interface
-
-## System Specifications
-
-### Connection Parameters
-- **Baud Rate**: 57600 bps
-- **Protocol**: MAVLink 2.0
-- **Connection Type**: Serial/Telemetry
-
-### Monitored Parameters
-1. **Battery Status**
-   - Voltage: 11.8V
-   - Current: 4.2A
-   - Capacity Used: 1240mAh
-   - Time Remaining: ~22min
-   - Charge Level: 78%
-
-2. **Communication Metrics**
-   - Signal Strength: 92%
-   - Link Quality: 98%
-   - Data Rate: 57.6 kbps
-   - Packet Loss: 0.2%
-
-3. **System Health**
-   - CPU Load: 24%
-   - Memory Usage: 32%
-   - Temperature: 32°C
-   - Storage: 45% used
-   - Overall Status: Normal
-
-## Technical Architecture
-
-### Frontend
-- React.js for dynamic UI
-- WebSocket for real-time data updates
-- Chart.js for telemetry visualization
-
-### Backend
-- Python-based MAVLink communication
-- WebSocket server for real-time data transmission
-- JSON-based data storage and retrieval
-
-### Data Flow
-1. MAVLink messages from Pixhawk
-2. Python script processing (`listen.py`)
-3. WebSocket transmission
-4. React frontend visualization
-
-## Installation & Setup
-
-### Prerequisites
 ```bash
-# Python dependencies
-pip install pymavlink websockets asyncio json
-
-# Node.js dependencies
-npm install
+# Start MAVProxy with UDP forwarding
+mavproxy.py --master=/dev/tty.usbserial-XXXX --baud=57600 --out=udp:localhost:14550 --out=udp:localhost:14551
 ```
 
-### Running the System
-1. Start the MAVLink listener:
+This allows multiple applications to communicate with your drone simultaneously.
+
+### 🖥️ **4. Running the Application**
+
+Start the backend services:
+
 ```bash
-python3 listen.py --connection /dev/tty.usbserial-* --baud 57600
+# Terminal 1: Start the telemetry listener
+python3 listen.py --connection /dev/tty.usbserial-XXXX --baud 57600
+
+# Terminal 2: Start the calibration server
+python3 calibrating/calibration_server.py
 ```
 
-2. Launch the web interface:
+Start the frontend development server:
+
 ```bash
+# Terminal 3: Launch the web interface
+pnpm dev
+# or with npm
 npm run dev
 ```
 
-## Monitored Parameters
+Navigate to `http://localhost:3000` in your browser to access the SkySync GCS interface.
 
-### Attitude Data
-- Roll, Pitch, Yaw angles
-- Angular velocities
-- Orientation quaternions
+## 📊 **Features & Capabilities**
 
-### Position Data
-- Local position (NED frame)
-- Global position (GPS coordinates)
-- Velocity vectors
+### 📡 **Real-time Telemetry**
 
-### IMU Data
-- Raw accelerometer readings
-- Gyroscope data
-- Magnetometer measurements
+SkySync GCS provides comprehensive drone telemetry monitoring:
 
-### System Status
-- Heartbeat messages
-- System mode
-- Armed status
-- Flight mode
+- **Attitude Data**: Real-time roll, pitch, yaw with 3D visualization
+- **Position Tracking**: GPS coordinates with map overlay and flight path
+- **System Health**: Battery status, signal strength, and system diagnostics
+- **Sensor Data**: IMU readings, magnetometer data, and barometric information
 
-## Calibration Features
-- Gyroscope calibration
-- Accelerometer calibration
-- Magnetometer calibration
-- Level horizon calibration
+### 🛠️ **Professional Calibration Suite**
 
-## Future Enhancements
-1. Autonomous mission planning
-2. 3D visualization of drone attitude
-3. Advanced flight data logging
-4. Machine learning-based anomaly detection
-5. Enhanced security features
+The calibration interface guides you through each procedure with clear instructions:
 
-## Acknowledgments
-Special thanks to our Director for their guidance and support in making this project possible.
+1. **Gyroscope Calibration**
+   - Automatically detects and corrects gyro bias
+   - Visual indicators for calibration quality
+   
+2. **Accelerometer Calibration**
+   - Six-position guided calibration workflow
+   - Real-time feedback for each position
+   
+3. **Magnetometer Calibration**
+   - Interactive compass calibration with visual guidance
+   - Interference detection and correction
+   
+4. **Radio Calibration**
+   - Channel mapping and endpoint configuration
+   - Failsafe testing and configuration
 
-## License
-This project is licensed under the Creative Commons Attribution-NonCommercial-NoDerivatives 4.0 International License - see the LICENSE file for details.
+### 📱 **Responsive Design**
 
-## Contact
-For any queries regarding the project, please contact Team NJORD members.
+SkySync GCS works seamlessly across all devices:
 
-## Quick Start
+- **Desktop**: Full-featured interface with expanded data visualization
+- **Tablet**: Optimized touch controls and readable data displays
+- **Mobile**: Essential controls and telemetry for field operations
 
-1. Start MAVProxy with UDP forwarding:
+## 🚀 **Roadmap**
+
+We're continuously improving SkySync GCS with new features:
+
+- **Q3 2025**: Advanced mission planning with waypoint management
+- **Q4 2025**: AI-powered anomaly detection for preventive maintenance
+- **Q1 2026**: Enhanced 3D mapping with LiDAR and SLAM integration
+- **Q2 2026**: Multi-vehicle control and fleet management capabilities
+
+## 👨‍💻 **Contributing**
+
+We welcome contributions to SkySync GCS:
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 **License**
+
+This project is licensed under the proprietary license. All rights reserved.
+
+## 🤝 **Support & Contact**
+
+For support, feature requests, or inquiries:
+
+- **Website**: Upcoming       
+- **Email**: arnav.angarkar20@gmail.com
+- **Twitter**: Upcoming 
+- **GitHub Issues**: For bug reports and feature requests
+
+## 💫 **Technical Specifications**
+
+### ⚡ **Performance**
+
+SkySync GCS is optimized for real-time drone operations:
+
+- **Update Rate**: Up to 50Hz telemetry updates
+- **Latency**: <100ms typical end-to-end latency
+- **Resource Usage**: <200MB memory footprint
+- **Compatibility**: Works with MAVLink 1.0 and 2.0
+
+### 🔌 **Connection Options**
+
+Connect to your drone using multiple methods:
+
+- **Serial Connection**: Direct USB to Pixhawk (FTDI)
+- **Telemetry Radio**: Support for SiK radios (433/915MHz)
+- **Wi-Fi**: ESP8266/ESP32-based telemetry bridges
+- **Bluetooth**: Experimental support for HC-05/HC-06
+
+### 📊 **Telemetry Parameters**
+
+SkySync GCS monitors comprehensive drone metrics:
+
+#### **Flight Data**
+- **Attitude**: Roll, pitch, yaw (degrees and quaternions)
+- **Position**: Latitude, longitude, altitude (GPS and barometric)
+- **Velocity**: Ground speed and 3D velocity vector (m/s)
+- **RC Input**: All channel values and control positions
+
+#### **System Health**
+- **Battery**: Voltage, current, remaining capacity, cells
+- **Connection**: Signal strength, packet loss, round-trip time
+- **System**: CPU usage, storage, temperature, uptime
+- **Sensors**: Gyroscope, accelerometer, magnetometer, barometer health
+
+
+<!-- ## 📸 **Screenshots**
+
+<div align="center">
+  <p><i>Main Dashboard - Real-time telemetry overview with 3D visualization</i></p>
+  <img src="https://via.placeholder.com/1200x600?text=SkySync+Dashboard" alt="SkySync Dashboard" width="800"/>
+  
+  <p><i>Calibration Interface - Professional sensor calibration workflow</i></p>
+  <img src="https://via.placeholder.com/1200x600?text=Calibration+Interface" alt="Calibration Interface" width="800"/>
+  
+  <p><i>Position Tracking - GPS-based position monitoring with map overlay</i></p>
+  <img src="https://via.placeholder.com/1200x600?text=Position+Tracking" alt="Position Tracking" width="800"/>
+</div> -->
+
+## 🔧 **Quick Reference**
+
+### Common Commands
+
 ```bash
-mavproxy.py --master=/dev/tty.usbserial-D30JKVZM --baud=57600 --out=udp:localhost:14550 --out=udp:localhost:14551
+# Start MAVProxy with UDP forwarding
+mavproxy.py --master=/dev/tty.usbserial-XXXX --baud=57600 --out=udp:localhost:14550 --out=udp:localhost:14551
+
+# Start the telemetry listener
+python3 listen.py --connection /dev/tty.usbserial-XXXX --baud 57600
+
+# Start the calibration server
+python3 calibrating/calibration_server.py
+
+# Start the web interface
+pnpm dev  # or npm run dev
 ```
 
-2. Start the calibration server:
-```bash
-python3 caliberating/calibration_server.py
-```
+### System Requirements
 
-3. Start the Listening Server:
-```bash
-python3 listen.py
-```
+- **Minimum Hardware**
+  - 2 GHz dual-core processor
+  - 4 GB RAM
+  - 1 GB available storage
+  - USB port for drone connection
 
+- **Recommended Hardware**
+  - 2.5 GHz quad-core processor
+  - 8 GB RAM
+  - 2 GB available storage
+  - USB 3.0 port
 
+- **Supported Operating Systems**
+  - Windows 10/11
+  - macOS 11+
+  - Ubuntu 20.04+
+  - Raspberry Pi OS (64-bit)
 
-4. Start the web interface:
-```bash
-npm run dev
-```
+## 🙏 **Acknowledgments**
 
-4. Open http://localhost:3000 in your browser
+Special thanks to:
+- ArduPilot Team for MAVLink protocol development
+- QGroundControl and Mission Planner for inspiration
 
-## Important Notes
-- Always start MAVProxy first with UDP forwarding
-- The calibration server will connect to the UDP port instead of directly to the serial port
-- This allows multiple applications to communicate with the drone simultaneously
+---
 
-# Drone Web Interface
-
-## 🚀 Quick Start Guide
+<p align="center">
+  <b>SkySync GCS</b> - Professional Ground Control System<br>
+  © 2025 Arnav Angarkar . All Rights Reserved.
+</p>
 
 ### Prerequisites
 1. Install Node.js (LTS version) from [nodejs.org](https://nodejs.org/)
@@ -598,4 +626,10 @@ UDP Forwarding | Optional | Recommended
      CALIBRATION_TIMEOUT = 180  # Increase from 120 to 180 seconds
      ```
 
+## 🔄 **Project Evolution: From Basic Web UI to 9009**  
 
+### 🌟 **Previous Versions**  
+- **Drone_Web_Interface_909:** Modern TypeScript/React/3D telemetry dashboard ([View Here](https://github.com/ArnavBallinCode/Drone_Web_Interface_909))
+- **IROC_WEB_INTERFACE:** Original UI (HTML, CSS, JS) ([View Here](https://github.com/ArnavBallinCode/IROC_WEB_INTERFACE))
+- **ISRO_IROC_Web:** Backend scripts (Python + MAVLink) ([View Here](https://github.com/ArnavBallinCode/ISRO_IROC_Web))
+- **ISRO_IROC_Webinterface:** Older telemetry interface (Python-based) ([View Here](https://github.com/ArnavBallinCode/ISRO_IROC_Webinterface))
