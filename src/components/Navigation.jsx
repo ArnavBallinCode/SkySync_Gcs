@@ -11,7 +11,7 @@ const Navigation = () => {
     <AppBar position="static">
       <Toolbar>
         <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-          Team NJORD - Drone Interface
+          SkySync GCS
         </Typography>
         <Box>
           <Button
@@ -44,7 +44,7 @@ const Navigation = () => {
             to="/docs"
             startIcon={<MenuBookIcon />}
           >
-            Docs
+            Documentation
           </Button>
         </Box>
       </Toolbar>

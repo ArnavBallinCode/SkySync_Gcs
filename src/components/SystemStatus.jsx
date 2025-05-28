@@ -16,7 +16,7 @@ const SystemStatus = ({ data }) => {
   return (
     <Box sx={{ flexGrow: 1, p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        System Status - Team NJORD
+        System Status - SkySync GCS
       </Typography>
 
       {/* Team Information */}
@@ -40,7 +40,7 @@ const SystemStatus = ({ data }) => {
         <Box sx={{ mt: 2 }}>
           <img 
             src={TeamImage} 
-            alt="Team NJORD with Director" 
+            alt="SkySync GCS with Director" 
             style={{ maxWidth: '100%', height: 'auto', borderRadius: '8px' }}
           />
         </Box>

@@ -128,7 +128,7 @@ export function Preloader() {
               className="mb-8"
             >
               <h1 className="text-7xl font-bold text-white mb-4 text-shadow-lg">
-                TEAM <span className="text-blue-400">NJORD</span>
+                SKY <span className="text-blue-400">SYNC GCS </span>
               </h1>
               <div className="h-1 w-64 mx-auto bg-blue-400 rounded-full shadow-glow" />
             </motion.div>

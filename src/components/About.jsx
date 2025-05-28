@@ -8,7 +8,7 @@ const About = () => {
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h4" gutterBottom>
-        About Team NJORD
+        About SkySync GCS
       </Typography>
 
       <Grid container spacing={3}>
