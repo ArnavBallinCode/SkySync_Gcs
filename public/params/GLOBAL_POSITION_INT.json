@@ -1,7 +1,7 @@
 {
     "mavpackettype": "GLOBAL_POSITION_INT",
     "time_boot_ms": 565232,
-    "lat": 0,
+    "lat": 1,
     "lon": 0,
     "alt": 40,
     "relative_alt": 24,

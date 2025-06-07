@@ -33,6 +33,16 @@ SkySync GCS is a powerful, modern ground control system designed for professiona
   - Attitude and orientation visualization
   - System health analytics
 
+- **🛡️ Dynamic Drone Arena Visualization**
+  - **Complete dynamic system** - No hardcoded coordinates
+  - **Real-time SCP data fetching** from Jetson device
+  - **Dynamic arena boundaries** from GPS coordinates
+  - **Live safe spot detection** with pulsing animations
+  - **Auto-refresh every 30 seconds** from Jetson device
+  - **GPS-to-field coordinate conversion** system
+  - **Real-time drone position tracking** with trail effects
+  - **Safe spot proximity alerts** with distance calculations
+
 - **Professional Calibration Suite**
   - Gyroscope calibration
   - Accelerometer calibration
@@ -196,6 +206,218 @@ The calibration interface guides you through each procedure with clear instructi
    - Channel mapping and endpoint configuration
    - Failsafe testing and configuration
 
+---
+
+## 🛡️ **Dynamic Drone Arena Visualization System**
+
+### 📍 **Overview**
+SkySync GCS features a completely dynamic drone arena visualization system that fetches real-time arena boundaries and safe spots from a Jetson device via SCP. No coordinates are hardcoded - everything is dynamically fetched and updated in real-time.
+
+### 🏗️ **System Architecture**
+
+```mermaid
+graph TD
+    A[Jetson Device<br/>10.0.2.219] --> B[SCP Fetch<br/>Every 30s]
+    B --> C[Backend API<br/>/api/jetson-data]
+    C --> D[Frontend UI<br/>/safe-spots]
+    D --> E[Live Visualization<br/>Arena + Safe Spots]
+    
+    F[Drone Telemetry] --> G[Position Updates<br/>250ms]
+    G --> D
+    
+    H[GPS Coordinates] --> I[Field Coordinate<br/>Conversion]
+    I --> E
+```
+
+### 📂 **File Structure & Data Flow**
+
+#### **1. Jetson Device (Source of Truth)**
+```
+📁 Jetson Device (jetson123@10.0.2.219)
+└── /home/nvidia/safe_zone_data.txt  ← UPDATE THIS FILE FOR LIVE DATA
+```
+
+**File Format:**
+```txt
+Arena:
+Corner1: [12.0345, 77.1234]
+Corner2: [12.0345, 77.1265]
+Corner3: [12.0315, 77.1265]
+Corner4: [12.0315, 77.1234]
+
+Detected Safe Spots
+SafeSpots:
+Spot1: [12.0331, 77.1245]
+Spot2: [12.0320, 77.1255]
+Spot3: [12.0330, 77.1239]
+```
+
+#### **2. Backend API (SCP Fetcher)**
+```
+📁 app/api/jetson-data/route.ts
+- Automatically connects to Jetson via SCP
+- Downloads /home/nvidia/safe_zone_data.txt
+- Parses GPS coordinates
+- Returns structured JSON data
+```
+
+#### **3. Frontend Visualization**
+```
+📁 app/safe-spots/page.tsx     ← Safe Spots Detection UI
+📁 app/arena/page.tsx          ← 3D Arena Visualization
+```
+
+### 🔄 **Data Flow Process**
+
+1. **Jetson Device** updates `/home/nvidia/safe_zone_data.txt` with live GPS coordinates
+2. **Backend API** fetches data via SCP every 30 seconds
+3. **Frontend** receives JSON data and converts GPS to field coordinates
+4. **Visualization** renders dynamic arena polygon and safe spots
+5. **Real-time Updates** show drone position and safe spot detection
+
+### 🚀 **How to Update Live Arena Data**
+
+#### **Method 1: Direct SSH Update**
+```bash
+# SSH to Jetson device
+ssh jetson123@10.0.2.219
+
+# Edit the safe zone file
+nano /home/nvidia/safe_zone_data.txt
+
+# Update coordinates and save
+# System automatically fetches updates every 30 seconds
+```
+
+#### **Method 2: Python Script on Jetson (Recommended)**
+Create this script on the Jetson device for continuous updates:
+
+```python
+# /home/nvidia/update_safe_zones.py
+import time
+import random
+
+def update_safe_zone_data():
+    # Base coordinates (adjust for your location)
+    base_lat = 12.0330
+    base_lng = 77.1250
+    
+    # Define arena corners (fixed rectangle)
+    arena_data = f"""Arena:
+Corner1: [{base_lat + 0.0015:.6f}, {base_lng - 0.0016:.6f}]
+Corner2: [{base_lat + 0.0015:.6f}, {base_lng + 0.0015:.6f}]
+Corner3: [{base_lat - 0.0015:.6f}, {base_lng + 0.0015:.6f}]
+Corner4: [{base_lat - 0.0015:.6f}, {base_lng - 0.0016:.6f}]
+
+Detected Safe Spots
+SafeSpots:"""
+    
+    # Generate dynamic safe spots (example: 3 random spots within arena)
+    safe_spots = []
+    for i in range(1, 4):
+        lat = base_lat + random.uniform(-0.001, 0.001)
+        lng = base_lng + random.uniform(-0.001, 0.001)
+        safe_spots.append(f"Spot{i}: [{lat:.6f}, {lng:.6f}]")
+    
+    content = arena_data + "\n" + "\n".join(safe_spots)
+    
+    # Write to file
+    with open('/home/nvidia/safe_zone_data.txt', 'w') as f:
+        f.write(content)
+    
+    print(f"✅ Updated safe zone data at {time.ctime()}")
+
+# Run continuously
+if __name__ == "__main__":
+    while True:
+        update_safe_zone_data()
+        time.sleep(10)  # Update every 10 seconds
+```
+
+**Run on Jetson:**
+```bash
+python3 /home/nvidia/update_safe_zones.py
+```
+
+### 🧪 **Testing the Dynamic System**
+
+#### **Test API Endpoint:**
+```bash
+# Test with mock data (no Jetson required)
+curl -X POST http://localhost:3000/api/jetson-data
+
+# Test with real Jetson SCP connection
+curl http://localhost:3000/api/jetson-data
+```
+
+#### **Access Live Visualization:**
+```bash
+# Start the development server
+npm run dev
+
+# Open in browser:
+# http://localhost:3000/safe-spots  ← Safe Spots Detection
+# http://localhost:3000/arena       ← 3D Arena Visualization
+```
+
+### 📊 **Key Features**
+
+- **🔄 Auto-Refresh**: Fetches new data every 30 seconds
+- **📍 GPS Conversion**: Converts GPS coordinates to field coordinates
+- **🎯 Safe Spot Detection**: Real-time proximity detection with 0.5m threshold
+- **✨ Visual Effects**: Pulsing animations for detected safe spots
+- **📊 Live Status**: Connection status and data freshness indicators
+- **🗺️ Dynamic Arena**: Arena boundaries render from fetched GPS corners
+- **📈 Position Trail**: Shows drone movement history
+- **⚠️ Alerts**: Pop-up notifications when entering safe spots
+
+### 🛠️ **Configuration**
+
+#### **Jetson Connection Settings** (in `app/api/jetson-data/route.ts`):
+```typescript
+const JETSON_CONFIG = {
+  ip: '10.0.2.219',                    // Jetson IP address
+  username: 'jetson123',               // SSH username
+  remotePath: '/home/nvidia/safe_zone_data.txt',  // File path on Jetson
+  localPath: path.join(process.cwd(), 'temp', 'safe_zone_data.txt')  // Local temp file
+}
+```
+
+#### **Detection Settings** (in `app/safe-spots/page.tsx`):
+```typescript
+const DETECTION_THRESHOLD = 0.5  // Detection radius in meters
+const UPDATE_INTERVAL = 30000     // SCP fetch interval (30 seconds)
+const POSITION_UPDATE = 250       // Drone position update (250ms)
+```
+
+### ⚡ **Performance**
+
+- **SCP Fetch**: 30-second intervals to avoid overloading Jetson
+- **Position Updates**: 250ms (4Hz) for smooth drone tracking
+- **GPS Conversion**: Real-time coordinate transformation
+- **Visual Rendering**: 60fps smooth animations with Three.js
+- **Memory Efficient**: Automatic cleanup of temporary SCP files
+
+### 🔧 **Troubleshooting**
+
+#### **Connection Issues:**
+```bash
+# Test SSH connection to Jetson
+ssh jetson123@10.0.2.219
+
+# Check if file exists
+ls -la /home/nvidia/safe_zone_data.txt
+
+# Test SCP manually
+scp jetson123@10.0.2.219:/home/nvidia/safe_zone_data.txt ./test_file.txt
+```
+
+#### **Common Solutions:**
+- Ensure Jetson device is connected to network
+- Verify SSH key authentication is set up
+- Check firewall settings on both devices
+- Confirm file permissions on Jetson device
+
 ### 📱 **Responsive Design**
 
 SkySync GCS works seamlessly across all devices:
@@ -203,6 +425,112 @@ SkySync GCS works seamlessly across all devices:
 - **Desktop**: Full-featured interface with expanded data visualization
 - **Tablet**: Optimized touch controls and readable data displays
 - **Mobile**: Essential controls and telemetry for field operations
+
+---
+
+## 🔗 **API Documentation**
+
+### **Dynamic Arena Data API**
+
+#### **GET** `/api/jetson-data`
+Fetches live arena and safe spot data from Jetson device via SCP.
+
+```typescript
+// Response Format
+{
+  "arena": [
+    { "lat": 12.0345, "lng": 77.1234 },
+    { "lat": 12.0345, "lng": 77.1265 },
+    { "lat": 12.0315, "lng": 77.1265 },
+    { "lat": 12.0315, "lng": 77.1234 }
+  ],
+  "safeSpots": [
+    { "id": "Spot1", "lat": 12.0331, "lng": 77.1245 },
+    { "id": "Spot2", "lat": 12.0320, "lng": 77.1255 },
+    { "id": "Spot3", "lat": 12.0330, "lng": 77.1239 }
+  ],
+  "timestamp": "2025-06-07T10:30:45.123Z",
+  "status": "success"
+}
+```
+
+**Error Response:**
+```typescript
+{
+  "arena": [],
+  "safeSpots": [],
+  "timestamp": "2025-06-07T10:30:45.123Z",
+  "status": "error",
+  "error": "Failed to fetch data from Jetson"
+}
+```
+
+#### **POST** `/api/jetson-data`
+Returns mock data for testing purposes (no Jetson connection required).
+
+```bash
+# Example Usage
+curl -X GET http://localhost:3000/api/jetson-data
+curl -X POST http://localhost:3000/api/jetson-data  # Mock data
+```
+
+### **Telemetry Data Endpoints**
+
+#### **Drone Position Data**
+```bash
+# Local Position (NED coordinates)
+GET /params/local_position_ned.json
+
+# Global Position (GPS coordinates)  
+GET /params/global_position_int.json
+
+# Attitude Data
+GET /params/attitude.json
+
+# Battery Status
+GET /params/battery_status.json
+```
+
+**Example Response:**
+```json
+// local_position_ned.json
+{
+  "x": 2.45,
+  "y": -1.23,
+  "z": -0.15,
+  "vx": 0.1,
+  "vy": -0.05,
+  "vz": 0.02,
+  "time_boot_ms": 45678
+}
+```
+
+### **WebSocket Endpoints**
+
+#### **Real-time Telemetry Stream**
+```javascript
+// Connect to live telemetry WebSocket
+const ws = new WebSocket('ws://localhost:8765/telemetry')
+
+ws.onmessage = (event) => {
+  const data = JSON.parse(event.data)
+  // Handle real-time telemetry data
+}
+```
+
+#### **Calibration Commands**
+```javascript
+// Calibration WebSocket
+const calibWs = new WebSocket('ws://localhost:8765/calibration')
+
+// Send calibration command
+calibWs.send(JSON.stringify({
+  command: 'start_gyro_calibration',
+  parameters: {}
+}))
+```
+
+---
 
 ## 🚀 **Roadmap**
 
@@ -247,6 +575,16 @@ SkySync GCS is optimized for real-time drone operations:
 - **Resource Usage**: <200MB memory footprint
 - **Compatibility**: Works with MAVLink 1.0 and 2.0
 
+### 🛡️ **Dynamic Arena System Performance**
+
+- **SCP Data Fetch**: 30-second intervals from Jetson device
+- **Position Updates**: 250ms (4Hz) for smooth drone tracking
+- **GPS Conversion**: Real-time coordinate transformation (<5ms)
+- **Visual Rendering**: 60fps smooth animations with Three.js
+- **Memory Efficiency**: Auto-cleanup of temporary SCP files
+- **Detection Accuracy**: 0.5m threshold for safe spot proximity
+- **Connection Timeout**: 10-second SCP timeout with fallback
+
 ### 🔌 **Connection Options**
 
 Connect to your drone using multiple methods:
@@ -255,6 +593,7 @@ Connect to your drone using multiple methods:
 - **Telemetry Radio**: Support for SiK radios (433/915MHz)
 - **Wi-Fi**: ESP8266/ESP32-based telemetry bridges
 - **Bluetooth**: Experimental support for HC-05/HC-06
+- **SCP/SSH**: Jetson device integration for arena data
 
 ### 📊 **Telemetry Parameters**
 
@@ -266,11 +605,19 @@ SkySync GCS monitors comprehensive drone metrics:
 - **Velocity**: Ground speed and 3D velocity vector (m/s)
 - **RC Input**: All channel values and control positions
 
+#### **Dynamic Arena Data**
+- **Arena Boundaries**: GPS coordinates converted to field coordinates
+- **Safe Spots**: Real-time GPS positions with detection zones
+- **Proximity Detection**: Distance calculation and alert system
+- **Data Freshness**: Timestamp tracking for Jetson data updates
+- **Connection Status**: Live monitoring of Jetson device connectivity
+
 #### **System Health**
 - **Battery**: Voltage, current, remaining capacity, cells
 - **Connection**: Signal strength, packet loss, round-trip time
 - **System**: CPU usage, storage, temperature, uptime
 - **Sensors**: Gyroscope, accelerometer, magnetometer, barometer health
+- **Jetson Status**: SCP connection health and data validation
 
 
 <!-- ## 📸 **Screenshots**
@@ -302,6 +649,31 @@ python3 calibrating/calibration_server.py
 
 # Start the web interface
 pnpm dev  # or npm run dev
+
+# Test dynamic arena system
+curl -X GET http://localhost:3000/api/jetson-data    # Real SCP fetch
+curl -X POST http://localhost:3000/api/jetson-data   # Mock data test
+```
+
+### 📁 **Project Structure**
+
+```
+SkySync GCS/
+├── app/
+│   ├── api/jetson-data/route.ts     # 🛡️ Dynamic arena SCP API
+│   ├── safe-spots/page.tsx          # 🛡️ Safe spots detection UI
+│   ├── arena/page.tsx               # 🛡️ 3D arena visualization
+│   ├── telemetry/page.tsx           # 📡 Real-time telemetry
+│   ├── calibration/page.tsx         # 🛠️ Sensor calibration
+│   └── layout.tsx                   # 🎨 Main layout
+├── components/
+│   ├── ui/                          # 🎨 Reusable UI components
+│   ├── telemetry-chart.tsx          # 📊 Data visualization
+│   └── navigation.tsx               # 🧭 Navigation components
+├── params/                          # 📄 Telemetry JSON files
+├── temp/safe_zone_data.txt          # 🛡️ Jetson data cache
+├── calibrating/                     # 🛠️ Python calibration scripts
+└── public/                          # 🖼️ Static assets
 ```
 
 ### System Requirements
