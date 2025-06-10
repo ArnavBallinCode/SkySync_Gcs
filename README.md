@@ -143,34 +143,80 @@ Adjust the serial port to match your system configuration:
 
 ### 🔌 **3. Connecting Your Drone**
 
-For the best experience, we recommend using MAVProxy to create a UDP bridge:
+**IMPORTANT**: We use MAVProxy as a bridge to avoid port conflicts between multiple applications:
 
-```bash
-# Start MAVProxy with UDP forwarding
-mavproxy.py --master=/dev/tty.usbserial-XXXX --baud=57600 --out=udp:localhost:14550 --out=udp:localhost:14551
+```mermaid
+graph LR
+    A[Drone Hardware<br/>/dev/tty.usbserial-XXXX] --> B[MAVProxy<br/>Master Connection]
+    B --> C[UDP:14550<br/>listen.py]
+    B --> D[UDP:14551<br/>Other Apps]
+    B --> E[Console<br/>Commands]
+    
+    style A fill:#ff6b6b
+    style B fill:#4ecdc4
+    style C fill:#45b7d1
+    style D fill:#96ceb4
+    style E fill:#feca57
 ```
 
-This allows multiple applications to communicate with your drone simultaneously.
+**Setup Commands:**
+```bash
+# Terminal 1: Start MAVProxy with UDP forwarding (REQUIRED FIRST)
+mavproxy.py --master=/dev/tty.usbserial-XXXX --baud=115200 --out=udp:localhost:14550 --out=udp:localhost:14551 --console
 
-### 🖥️ **4. Running the Application**
+# You should see:
+# "Connecting to /dev/tty.usbserial-XXXX"
+# "Received heartbeat from APM"
+```
 
-Start the backend services:
+### 🖥️ **4. Running the Complete System**
+
+**Data Flow Architecture:**
+```mermaid
+sequenceDiagram
+    participant D as Drone Hardware
+    participant M as MAVProxy
+    participant L as listen.py
+    participant J as Jetson Device
+    participant F as Frontend
+    
+    D->>M: MAVLink Messages
+    M->>L: UDP Stream (14550)
+    L->>L: Parse & Save JSON
+    F->>L: Fetch JSON Files
+    
+    J->>J: Update safe_zone_data.txt
+    F->>J: SCP Fetch (30s interval)
+    F->>F: Combine Telemetry + Arena Data
+```
+
+**Start all services in order:**
 
 ```bash
-# Terminal 1: Start the telemetry listener
-python3 listen.py --connection /dev/tty.usbserial-XXXX --baud 57600
+# Terminal 1: MAVProxy (Hardware Bridge)
+mavproxy.py --master=/dev/tty.usbserial-XXXX --baud=115200 --out=udp:localhost:14550 --console
 
-# Terminal 2: Start the calibration server
+# Terminal 2: Telemetry Listener (via UDP)
+python3 listen.py --connection=udp:localhost:14550
+
+# Terminal 3: Calibration Server
 python3 calibrating/calibration_server.py
+
+# Terminal 4: Next.js Web Interface
+npm run dev
 ```
 
-Start the frontend development server:
-
+**System Status Check:**
 ```bash
-# Terminal 3: Launch the web interface
-pnpm dev
-# or with npm
-npm run dev
+# Verify MAVProxy connection
+# Should show: "heartbeat from system X component Y"
+
+# Check JSON files being created
+ls -la public/params/
+# Should show: ATTITUDE.json, GLOBAL_POSITION_INT.json, etc.
+
+# Test Jetson connection
+curl http://localhost:3000/api/jetson-data
 ```
 
 Navigate to `http://localhost:3000` in your browser to access the SkySync GCS interface.
@@ -222,11 +268,74 @@ graph TD
     C --> D[Frontend UI<br/>/safe-spots]
     D --> E[Live Visualization<br/>Arena + Safe Spots]
     
-    F[Drone Telemetry] --> G[Position Updates<br/>250ms]
-    G --> D
+    F[Drone Telemetry] --> G[MAVProxy<br/>UDP Bridge]
+    G --> H[listen.py<br/>JSON Writer]
+    H --> I[Position Updates<br/>250ms]
+    I --> D
     
-    H[GPS Coordinates] --> I[Field Coordinate<br/>Conversion]
-    I --> E
+    J[GPS Coordinates] --> K[Field Coordinate<br/>Conversion]
+    K --> E
+    
+    style A fill:#ffd93d
+    style B fill:#6bcf7f
+    style C fill:#4d96ff
+    style D fill:#ff6b9d
+    style E fill:#c44536
+    style F fill:#ff8c42
+    style G fill:#6c5ce7
+    style H fill:#a29bfe
+    style I fill:#fd79a8
+```
+
+**Complete System Integration:**
+```mermaid
+flowchart TB
+    subgraph HW["🔧 Hardware Layer"]
+        DRONE[Pixhawk/Drone<br/>MAVLink Protocol]
+        JETSON[Jetson Device<br/>10.0.2.219]
+    end
+    
+    subgraph BRIDGE["🌉 Communication Bridge"]
+        MAVPROXY[MAVProxy<br/>UDP Forwarding]
+        SCP[SCP Protocol<br/>File Transfer]
+    end
+    
+    subgraph BACKEND["⚙️ Backend Services"]
+        LISTEN[listen.py<br/>Telemetry Parser]
+        API[Jetson API<br/>Route Handler]
+        CALIB[Calibration<br/>WebSocket Server]
+    end
+    
+    subgraph FRONTEND["🎨 Frontend Interface"]
+        REACT[Next.js/React<br/>Components]
+        SAFESPOTS[Safe Spots<br/>Detection UI]
+        ARENA[3D Arena<br/>Visualization]
+        TELEMETRY[Real-time<br/>Dashboard]
+    end
+    
+    subgraph DATA["📊 Data Layer"]
+        JSON[Telemetry JSON<br/>Files]
+        TEMP[Temporary<br/>SCP Cache]
+    end
+    
+    DRONE --> MAVPROXY
+    JETSON --> SCP
+    MAVPROXY --> LISTEN
+    SCP --> API
+    LISTEN --> JSON
+    API --> TEMP
+    JSON --> REACT
+    TEMP --> REACT
+    REACT --> SAFESPOTS
+    REACT --> ARENA
+    REACT --> TELEMETRY
+    CALIB --> REACT
+    
+    style HW fill:#ff7675
+    style BRIDGE fill:#74b9ff
+    style BACKEND fill:#00b894
+    style FRONTEND fill:#fdcb6e
+    style DATA fill:#e17055
 ```
 
 ### 📂 **File Structure & Data Flow**
@@ -296,6 +405,8 @@ Create this script on the Jetson device for continuous updates:
 # /home/nvidia/update_safe_zones.py
 import time
 import random
+import json
+from datetime import datetime
 
 def update_safe_zone_data():
     # Base coordinates (adjust for your location)
@@ -334,12 +445,87 @@ if __name__ == "__main__":
         time.sleep(10)  # Update every 10 seconds
 ```
 
+**Advanced Jetson Integration Flow:**
+```mermaid
+stateDiagram-v2
+    [*] --> Detecting
+    Detecting --> ProcessingGPS: GPS Lock Acquired
+    ProcessingGPS --> CalculatingSpots: Arena Boundaries Set
+    CalculatingSpots --> WritingFile: Safe Spots Identified
+    WritingFile --> WaitingUpdate: File Written
+    WaitingUpdate --> Detecting: Timer Expires (10s)
+    
+    ProcessingGPS --> ErrorState: GPS Signal Lost
+    CalculatingSpots --> ErrorState: Invalid Coordinates
+    WritingFile --> ErrorState: File Write Failed
+    ErrorState --> Detecting: Retry After Delay
+```
+
+**Jetson Data Processing Pipeline:**
+```mermaid
+flowchart LR
+    subgraph JETSON["🤖 Jetson Device"]
+        GPS[GPS Module<br/>Coordinate Input]
+        PROCESS[Data Processing<br/>Safe Spot Detection]
+        FILE[File Writer<br/>safe_zone_data.txt]
+    end
+    
+    subgraph NETWORK["🌐 Network Transfer"]
+        SCP[SCP Protocol<br/>SSH File Transfer]
+        CACHE[Temp Cache<br/>Local Storage]
+    end
+    
+    subgraph WEBAPP["🖥️ Web Application"]
+        API[API Endpoint<br/>/api/jetson-data]
+        PARSE[Data Parser<br/>GPS → Local Coords]
+        UI[React UI<br/>Live Visualization]
+    end
+    
+    GPS --> PROCESS
+    PROCESS --> FILE
+    FILE --> SCP
+    SCP --> CACHE
+    CACHE --> API
+    API --> PARSE
+    PARSE --> UI
+    
+    style JETSON fill:#e74c3c
+    style NETWORK fill:#3498db
+    style WEBAPP fill:#2ecc71
+```
+
 **Run on Jetson:**
 ```bash
 python3 /home/nvidia/update_safe_zones.py
 ```
 
 ### 🧪 **Testing the Dynamic System**
+
+**Complete System Testing Flow:**
+```mermaid
+graph TB
+    subgraph TEST["🧪 Testing Workflow"]
+        START[Start Testing] --> MOCK[Test Mock Data]
+        MOCK --> JETSON[Test Jetson SCP]
+        JETSON --> INTEGRATION[Test Full Integration]
+        INTEGRATION --> VALIDATION[Validate Real-time Updates]
+    end
+    
+    subgraph COMMANDS["💻 Test Commands"]
+        CMD1[curl -X POST<br/>Mock Data Test]
+        CMD2[curl -X GET<br/>Real SCP Test]
+        CMD3[Browser Test<br/>Live Visualization]
+        CMD4[SSH Test<br/>Jetson Connection]
+    end
+    
+    MOCK --> CMD1
+    JETSON --> CMD2
+    INTEGRATION --> CMD3
+    VALIDATION --> CMD4
+    
+    style TEST fill:#f39c12
+    style COMMANDS fill:#9b59b6
+```
 
 #### **Test API Endpoint:**
 ```bash
@@ -348,6 +534,12 @@ curl -X POST http://localhost:3000/api/jetson-data
 
 # Test with real Jetson SCP connection
 curl http://localhost:3000/api/jetson-data
+
+# Test Jetson SSH connectivity
+ssh jetson123@10.0.2.219 "echo 'Connection successful'"
+
+# Test file exists on Jetson
+ssh jetson123@10.0.2.219 "cat /home/nvidia/safe_zone_data.txt"
 ```
 
 #### **Access Live Visualization:**
@@ -358,6 +550,34 @@ npm run dev
 # Open in browser:
 # http://localhost:3000/safe-spots  ← Safe Spots Detection
 # http://localhost:3000/arena       ← 3D Arena Visualization
+```
+
+**Real-time Data Monitoring:**
+```mermaid
+sequenceDiagram
+    participant U as User Browser
+    participant F as Frontend
+    participant A as API Route
+    participant J as Jetson Device
+    participant D as Drone
+    
+    loop Every 30 seconds
+        F->>A: Fetch Jetson Data
+        A->>J: SCP Request
+        J-->>A: safe_zone_data.txt
+        A-->>F: Parsed JSON
+        F-->>U: Update Arena UI
+    end
+    
+    loop Every 250ms
+        F->>F: Fetch Telemetry JSON
+        D->>F: Position Data
+        F-->>U: Update Drone Position
+    end
+    
+    Note over F,U: Real-time Safe Spot Detection
+    F->>F: Calculate Distance
+    F-->>U: Proximity Alert
 ```
 
 ### 📊 **Key Features**
@@ -400,6 +620,39 @@ const POSITION_UPDATE = 250       // Drone position update (250ms)
 
 ### 🔧 **Troubleshooting**
 
+**System Diagnostics Flow:**
+```mermaid
+flowchart TD
+    START[System Issue] --> IDENTIFY{Identify Component}
+    
+    IDENTIFY -->|Telemetry| TEL[Telemetry Issues]
+    IDENTIFY -->|Jetson| JET[Jetson Connection]
+    IDENTIFY -->|Frontend| FE[Frontend Problems]
+    IDENTIFY -->|MAVProxy| MAV[MAVProxy Issues]
+    
+    TEL --> TEL1[Check MAVProxy Status]
+    TEL --> TEL2[Verify listen.py Running]
+    TEL --> TEL3[Check JSON Files]
+    
+    JET --> JET1[Test SSH Connection]
+    JET --> JET2[Verify File Exists]
+    JET --> JET3[Check SCP Permissions]
+    
+    FE --> FE1[Clear Browser Cache]
+    FE --> FE2[Check Console Errors]
+    FE --> FE3[Verify API Responses]
+    
+    MAV --> MAV1[Check Port Conflicts]
+    MAV --> MAV2[Verify Hardware Connection]
+    MAV --> MAV3[Test Different Baud Rates]
+    
+    style START fill:#e74c3c
+    style TEL fill:#3498db
+    style JET fill:#f39c12
+    style FE fill:#2ecc71
+    style MAV fill:#9b59b6
+```
+
 #### **Connection Issues:**
 ```bash
 # Test SSH connection to Jetson
@@ -410,6 +663,34 @@ ls -la /home/nvidia/safe_zone_data.txt
 
 # Test SCP manually
 scp jetson123@10.0.2.219:/home/nvidia/safe_zone_data.txt ./test_file.txt
+
+# Check MAVProxy UDP ports
+netstat -an | grep 14550
+netstat -an | grep 14551
+
+# Test listen.py connection
+python3 listen.py --connection=udp:localhost:14550 --baud=115200
+```
+
+**Port Conflict Resolution:**
+```mermaid
+graph LR
+    A[Port Conflict Detected] --> B{Check Running Processes}
+    B --> C[Kill MAVProxy: pkill -f mavproxy]
+    B --> D[Kill listen.py: pkill -f listen.py]
+    B --> E[Kill Other Apps: lsof -i :14550]
+    
+    C --> F[Restart in Correct Order]
+    D --> F
+    E --> F
+    
+    F --> G[1. MAVProxy First]
+    G --> H[2. listen.py Second]
+    H --> I[3. Web App Last]
+    
+    style A fill:#e74c3c
+    style F fill:#f39c12
+    style I fill:#27ae60
 ```
 
 #### **Common Solutions:**
@@ -417,6 +698,8 @@ scp jetson123@10.0.2.219:/home/nvidia/safe_zone_data.txt ./test_file.txt
 - Verify SSH key authentication is set up
 - Check firewall settings on both devices
 - Confirm file permissions on Jetson device
+- Restart MAVProxy if UDP ports are busy
+- Clear browser cache for frontend issues
 
 ### 📱 **Responsive Design**
 
@@ -638,21 +921,52 @@ SkySync GCS monitors comprehensive drone metrics:
 ### Common Commands
 
 ```bash
-# Start MAVProxy with UDP forwarding
-mavproxy.py --master=/dev/tty.usbserial-XXXX --baud=57600 --out=udp:localhost:14550 --out=udp:localhost:14551
+# Start MAVProxy with UDP forwarding (FIRST - Master connection)
+mavproxy.py --master=/dev/tty.usbserial-XXXX --baud=115200 --out=udp:localhost:14550 --out=udp:localhost:14551 --console
 
-# Start the telemetry listener
-python3 listen.py --connection /dev/tty.usbserial-XXXX --baud 57600
+# Start telemetry listener (SECOND - Connects via UDP to MAVProxy)
+python3 listen.py --connection=udp:localhost:14550
 
-# Start the calibration server
+# Start calibration server (THIRD - Independent WebSocket server)
 python3 calibrating/calibration_server.py
 
-# Start the web interface
-pnpm dev  # or npm run dev
+# Start web interface (FOURTH - Frontend application)
+npm run dev
 
 # Test dynamic arena system
 curl -X GET http://localhost:3000/api/jetson-data    # Real SCP fetch
 curl -X POST http://localhost:3000/api/jetson-data   # Mock data test
+
+# Jetson connection tests
+ssh jetson123@10.0.2.219 "echo 'Jetson connected'"
+scp jetson123@10.0.2.219:/home/nvidia/safe_zone_data.txt ./test.txt
+```
+
+**Service Startup Sequence:**
+```mermaid
+gantt
+    title SkySync GCS Startup Sequence
+    dateFormat X
+    axisFormat %M:%S
+    
+    section Hardware
+    Connect Drone Hardware    :done, hardware, 0, 30s
+    
+    section Communication
+    Start MAVProxy Bridge     :active, mavproxy, after hardware, 45s
+    Establish UDP Streams     :udp, after mavproxy, 15s
+    
+    section Data Processing
+    Start listen.py           :listen, after udp, 30s
+    Start Calibration Server  :calib, after listen, 30s
+    
+    section Frontend
+    Start Next.js App         :frontend, after calib, 60s
+    Load Web Interface        :ui, after frontend, 30s
+    
+    section Integration
+    Test Jetson Connection    :jetson, after ui, 45s
+    Verify Full System        :verify, after jetson, 30s
 ```
 
 ### 📁 **Project Structure**
@@ -670,13 +984,169 @@ SkySync GCS/
 │   ├── ui/                          # 🎨 Reusable UI components
 │   ├── telemetry-chart.tsx          # 📊 Data visualization
 │   └── navigation.tsx               # 🧭 Navigation components
-├── params/                          # 📄 Telemetry JSON files
+├── public/params/                   # 📄 Live telemetry JSON files
 ├── temp/safe_zone_data.txt          # 🛡️ Jetson data cache
 ├── calibrating/                     # 🛠️ Python calibration scripts
+├── listen.py                        # 📡 MAVLink → JSON converter
 └── public/                          # 🖼️ Static assets
 ```
 
+**Data Flow Through Project Structure:**
+```mermaid
+flowchart LR
+    subgraph INPUT["📥 Input Sources"]
+        DRONE[Drone<br/>MAVLink Data]
+        JETSON[Jetson Device<br/>GPS Coordinates]
+    end
+    
+    subgraph PROCESSING["⚙️ Processing Layer"]
+        MAVPROXY[MAVProxy<br/>UDP Bridge]
+        LISTEN[listen.py<br/>JSON Writer]
+        SCPAPI[SCP API<br/>route.ts]
+    end
+    
+    subgraph STORAGE["💾 Data Storage"]
+        PARAMS[public/params/<br/>Telemetry Files]
+        TEMP[temp/<br/>Arena Cache]
+    end
+    
+    subgraph OUTPUT["🖥️ Output Interface"]
+        SAFESPOTS[Safe Spots<br/>page.tsx]
+        ARENA[3D Arena<br/>page.tsx]
+        TELEMETRY[Telemetry<br/>page.tsx]
+    end
+    
+    DRONE --> MAVPROXY
+    MAVPROXY --> LISTEN
+    LISTEN --> PARAMS
+    
+    JETSON --> SCPAPI
+    SCPAPI --> TEMP
+    
+    PARAMS --> SAFESPOTS
+    PARAMS --> TELEMETRY
+    TEMP --> SAFESPOTS
+    TEMP --> ARENA
+    
+    style INPUT fill:#ff7675
+    style PROCESSING fill:#74b9ff
+    style STORAGE fill:#00b894
+    style OUTPUT fill:#fdcb6e
+```
+
+**File Dependencies Map:**
+```mermaid
+graph TD
+    subgraph CORE["🎯 Core Files"]
+        LISTEN[listen.py<br/>Telemetry Processor]
+        ROUTE[route.ts<br/>Jetson API]
+        LAYOUT[layout.tsx<br/>App Structure]
+    end
+    
+    subgraph PAGES["📄 Page Components"]
+        SAFE[safe-spots/page.tsx]
+        ARENA[arena/page.tsx] 
+        TELEM[telemetry/page.tsx]
+        CALIB[calibration/page.tsx]
+    end
+    
+    subgraph DATA["📊 Data Files"]
+        JSON[params/*.json]
+        CACHE[temp/safe_zone_data.txt]
+        STATIC[public/assets]
+    end
+    
+    subgraph UTILS["🔧 Utilities"]
+        COMPONENTS[components/ui/*]
+        HOOKS[hooks/*]
+        LIB[lib/utils.ts]
+    end
+    
+    LISTEN --> JSON
+    ROUTE --> CACHE
+    
+    JSON --> SAFE
+    JSON --> TELEM
+    CACHE --> SAFE
+    CACHE --> ARENA
+    
+    COMPONENTS --> SAFE
+    COMPONENTS --> ARENA
+    COMPONENTS --> TELEM
+    COMPONENTS --> CALIB
+    
+    HOOKS --> SAFE
+    HOOKS --> ARENA
+    LIB --> SAFE
+    
+    LAYOUT --> SAFE
+    LAYOUT --> ARENA
+    LAYOUT --> TELEM
+    LAYOUT --> CALIB
+    
+    style CORE fill:#e74c3c
+    style PAGES fill:#3498db
+    style DATA fill:#f39c12
+    style UTILS fill:#27ae60
+```
+
 ### System Requirements
+
+**Hardware Requirements:**
+```mermaid
+mindmap
+  root((SkySync GCS<br/>Requirements))
+    Minimum Hardware
+      2 GHz dual-core processor
+      4 GB RAM
+      1 GB storage
+      USB 2.0 port
+    Recommended Hardware
+      2.5 GHz quad-core processor
+      8 GB RAM
+      2 GB storage
+      USB 3.0 port
+    Network Requirements
+      Ethernet/WiFi connection
+      SSH access to Jetson
+      Internet for dependencies
+    Drone Hardware
+      Pixhawk compatible FC
+      MAVLink 1.0/2.0 support
+      USB or telemetry radio
+      GPS module (recommended)
+```
+
+**Software Compatibility Matrix:**
+```mermaid
+graph TB
+    subgraph OS["💻 Operating Systems"]
+        MACOS[macOS 11+<br/>✅ Fully Supported]
+        UBUNTU[Ubuntu 20.04+<br/>✅ Fully Supported] 
+        WINDOWS[Windows 10/11<br/>✅ Fully Supported]
+        RASPI[Raspberry Pi OS<br/>⚠️ Limited Support]
+    end
+    
+    subgraph RUNTIME["🔧 Runtime Requirements"]
+        NODE[Node.js 16+<br/>Required]
+        PYTHON[Python 3.8+<br/>Required]
+        MAVPROXY[MAVProxy<br/>Recommended]
+        GIT[Git<br/>Required for setup]
+    end
+    
+    subgraph OPTIONAL["📦 Optional Components"]
+        DOCKER[Docker<br/>For containerization]
+        VSCODE[VS Code<br/>Development]
+        CHROME[Chrome/Firefox<br/>Web interface]
+    end
+    
+    OS --> RUNTIME
+    RUNTIME --> OPTIONAL
+    
+    style OS fill:#3498db
+    style RUNTIME fill:#e74c3c
+    style OPTIONAL fill:#f39c12
+```
 
 - **Minimum Hardware**
   - 2 GHz dual-core processor
