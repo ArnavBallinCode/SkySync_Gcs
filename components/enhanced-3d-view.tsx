@@ -143,34 +143,6 @@ function Drone({ position, rotation, showTrail = true }: DroneProps) {
   )
 }
 
-// Environment effects with custom ground size
-function Environment3D() {
-  // 30x40 feet ≈ 9.14m x 12.19m
-  return (
-    <>
-      {/* Main lighting */}
-      <ambientLight intensity={0.5} />
-      <directionalLight 
-        position={[5, 5, 5]} 
-        intensity={1} 
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-      />
-      <directionalLight position={[-5, 5, -5]} intensity={0.5} />
-
-      {/* Ground plane for better visibility */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.01, 0]} receiveShadow>
-        <planeGeometry args={[12.19, 9.14]} />
-        <meshStandardMaterial color="#1a237e" opacity={0.5} transparent />
-      </mesh>
-
-      {/* Environment effects */}
-      <Environment preset="sunset" />
-    </>
-  )
-}
-
 // Debug overlay
 function DebugOverlay({ position, attitude }: { position: Position; attitude: Attitude }) {
   return (
@@ -201,31 +173,68 @@ Yaw: ${(attitude.yaw * 180 / Math.PI).toFixed(1)}°`}
 
 // Enhanced grid with better visibility and custom size
 function EnhancedGrid() {
-  // 30x40 feet ≈ 9.14m x 12.19m
+  // Arena dimensions: 9x12 meters positioned on positive axis only
   return (
     <>
       <Grid
-        args={[12.19, 9.14]}
+        position={[4.5, 0, 6]}
+        args={[9, 12]}
         cellSize={1}
-        cellThickness={1}
-        cellColor="#4fc3f7"
-        sectionSize={5}
-        sectionThickness={1.5}
-        sectionColor="#b3e5fc"
+        cellThickness={1.5}
+        cellColor="#ffffff"
+        sectionSize={3}
+        sectionThickness={2}
+        sectionColor="#00ff00"
         fadeDistance={30}
         fadeStrength={1}
+        infiniteGrid={false}
+        followCamera={false}
       />
-      {[-4, 0, 4, 8, 12].map((x) => (
+      {/* X-axis labels (9 meters wide) */}
+      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((x) => (
         <Text
-          key={x}
-          position={[x, 0.1, -4.5]}
+          key={`x-${x}`}
+          position={[x, 0.1, -0.5]}
           rotation={[-Math.PI / 2, 0, 0]}
-          color="#b3e5fc"
-          fontSize={0.5}
+          color="#ffffff"
+          fontSize={0.4}
         >
           {x}m
         </Text>
       ))}
+      {/* Z-axis labels (12 meters long) */}
+      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((z) => (
+        <Text
+          key={`z-${z}`}
+          position={[-0.5, 0.1, z]}
+          rotation={[-Math.PI / 2, 0, Math.PI / 2]}
+          color="#ffffff"
+          fontSize={0.4}
+        >
+          {z}m
+        </Text>
+      ))}
+      
+      {/* Arena boundary markers */}
+      <group>
+        {/* Corner markers */}
+        <mesh position={[0, 0.05, 0]}>
+          <cylinderGeometry args={[0.1, 0.1, 0.1]} />
+          <meshStandardMaterial color="#ff6b6b" emissive="#ff6b6b" emissiveIntensity={0.3} />
+        </mesh>
+        <mesh position={[9, 0.05, 0]}>
+          <cylinderGeometry args={[0.1, 0.1, 0.1]} />
+          <meshStandardMaterial color="#ff6b6b" emissive="#ff6b6b" emissiveIntensity={0.3} />
+        </mesh>
+        <mesh position={[0, 0.05, 12]}>
+          <cylinderGeometry args={[0.1, 0.1, 0.1]} />
+          <meshStandardMaterial color="#ff6b6b" emissive="#ff6b6b" emissiveIntensity={0.3} />
+        </mesh>
+        <mesh position={[9, 0.05, 12]}>
+          <cylinderGeometry args={[0.1, 0.1, 0.1]} />
+          <meshStandardMaterial color="#ff6b6b" emissive="#ff6b6b" emissiveIntensity={0.3} />
+        </mesh>
+      </group>
     </>
   )
 }
@@ -275,6 +284,28 @@ function HeightLine({ position }: { position: Position }) {
         gapSize={0.15}
       />
     </line>
+  )
+}
+
+// Environment effects with custom ground size
+function Environment3D() {
+  // 30x40 feet ≈ 9.14m x 12.19m
+  return (
+    <>
+      {/* Main lighting */}
+      <ambientLight intensity={0.5} />
+      <directionalLight 
+        position={[5, 5, 5]} 
+        intensity={1} 
+        castShadow
+        shadow-mapSize-width={1024}
+        shadow-mapSize-height={1024}
+      />
+      <directionalLight position={[-5, 5, -5]} intensity={0.5} />
+      {/* Removed navy blue ground plane */}
+      {/* Environment effects */}
+      <Environment preset="sunset" />
+    </>
   )
 }
 
@@ -360,4 +391,4 @@ export function Enhanced3DView({ className }: EnhancedVisualizerProps) {
       </div>
     </div>
   )
-} 
+}

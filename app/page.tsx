@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PositionData } from "@/components/position-data"
 import { AttitudeVisualizer } from "@/components/attitude-visualizer"
+import { Enhanced3DView } from "@/components/enhanced-3d-view"
 import { TelemetryStatus } from "@/components/telemetry-status"
 import { TelemetryOverview } from "@/components/telemetry-overview"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,7 @@ export default function DashboardPage() {
           <CardTitle>Telemetry Overview</CardTitle>
         </CardHeader>
         <CardContent>
-          <TelemetryOverview showAllParameters />
+          <TelemetryOverview />
         </CardContent>
       </Card>
 
@@ -66,6 +67,15 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>3D Visualization</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Enhanced3DView />
+        </CardContent>
+      </Card>
     </div>
   )
 }

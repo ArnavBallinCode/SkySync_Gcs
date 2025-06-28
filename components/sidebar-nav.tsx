@@ -12,7 +12,8 @@ import {
   SettingsIcon,
   BarChart2Icon,
   RadioIcon,
-  WrenchIcon
+  WrenchIcon,
+  EyeIcon
 } from "lucide-react"
 
 const routes = [
@@ -30,6 +31,11 @@ const routes = [
     title: "Attitude",
     icon: SlidersHorizontalIcon,
     href: "/attitude",
+  },
+  {
+    title: "Visualization",
+    icon: EyeIcon,
+    href: "/visualization",
   },
   {
     title: "Parameters",
