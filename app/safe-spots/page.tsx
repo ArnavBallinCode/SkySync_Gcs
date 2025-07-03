@@ -231,10 +231,20 @@ export default function SafeSpotsPage() {
       const distance = calculateDistance(currentPosition, spotFieldCoords)
       
       if (distance <= DETECTION_THRESHOLD && !detectedSpots.includes(spot.id)) {
-        setDetectedSpots(prev => [...prev, spot.id])
-        
-        console.log(`🎯 ${spot.id} Detected! Distance: ${distance.toFixed(2)}m`)
-        alert(`🎯 SAFE SPOT DETECTED!\n\n${spot.id}\nDistance: ${distance.toFixed(2)}m\nGPS: (${spot.lat.toFixed(6)}, ${spot.lng.toFixed(6)})`)
+        setDetectedSpots(prev => {
+          const newDetected = [...prev, spot.id]
+          
+          // Check if this completes the mission (all 3 safe spots detected)
+          if (newDetected.length === 3) {
+            console.log('🏆 MISSION COMPLETE! All 3 safe spots detected!')
+            alert(`� MISSION COMPLETE!\n\nAll 3 Safe Spots Detected!\n\nCongratulations! You have successfully completed the safe spot detection mission.`)
+          } else {
+            console.log(`�🎯 ${spot.id} Detected! Distance: ${distance.toFixed(2)}m (${newDetected.length}/3 complete)`)
+            alert(`🎯 SAFE SPOT DETECTED!\n\n${spot.id}\nDistance: ${distance.toFixed(2)}m\nGPS: (${spot.lat.toFixed(6)}, ${spot.lng.toFixed(6)})\n\nProgress: ${newDetected.length}/3 safe spots`)
+          }
+          
+          return newDetected
+        })
       }
     })
   }, [currentPosition, jetsonData, detectedSpots])
@@ -323,161 +333,261 @@ export default function SafeSpotsPage() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="aspect-[3/4] relative bg-green-50 border">
-              <svg width="100%" height="100%" viewBox="0 0 9 12" className="absolute inset-0">
-                {/* Field boundary */}
-                <rect x="0" y="0" width="9" height="12" fill="#e8f5e8" stroke="#000" strokeWidth="0.1"/>
+            <div className="aspect-[3/4] relative bg-green-50 dark:bg-green-950 border">
+              <svg width="100%" height="100%" viewBox="-1 -1 11 14" className="absolute inset-0" preserveAspectRatio="xMidYMid meet">
+                {/* Clipping definition - prevents any shifting of map */}
+                <defs>
+                  <clipPath id="fieldClip">
+                    <rect x="-1" y="-1" width="11" height="14"/>
+                  </clipPath>
+                </defs>
                 
-                {/* Grid lines */}
-                {[1,2,3,4,5,6,7,8].map(i => (
-                  <line key={`v${i}`} x1={i} y1="0" x2={i} y2="12" stroke="#ddd" strokeWidth="0.02"/>
+                {/* Expanded field boundary - FIXED FRAME */}
+                <rect x="-1" y="-1" width="11" height="14" className="fill-green-50 dark:fill-green-950" stroke="#000" strokeWidth="0.1"/>
+                
+                {/* Grid lines (expanded) - FIXED FRAME */}
+                {[0,1,2,3,4,5,6,7,8,9,10].map(i => (
+                  <line key={`v${i}`} x1={i} y1="-1" x2={i} y2="13" className="stroke-gray-300 dark:stroke-gray-600" strokeWidth="0.02"/>
                 ))}
-                {[1,2,3,4,5,6,7,8,9,10,11].map(i => (
-                  <line key={`h${i}`} x1="0" y1={i} x2="9" y2={i} stroke="#ddd" strokeWidth="0.02"/>
+                {[0,1,2,3,4,5,6,7,8,9,10,11,12,13].map(i => (
+                  <line key={`h${i}`} x1="-1" y1={i} x2="10" y2={i} className="stroke-gray-300 dark:stroke-gray-600" strokeWidth="0.02"/>
                 ))}
                 
-                {/* Dynamic Arena from Jetson */}
-                {arenaFieldCoords.length >= 4 && (
-                  <g>
-                    <polygon
-                      points={arenaFieldCoords.map(p => `${p.x},${12 - p.y}`).join(' ')}
-                      fill="rgba(255,215,0,0.1)"
-                      stroke="#FFD700"
-                      strokeWidth="0.1"
-                      strokeDasharray="0.2,0.1"
-                    />
-                    {arenaFieldCoords.map((corner, index) => (
-                      <circle
-                        key={index}
-                        cx={corner.x}
-                        cy={12 - corner.y}
-                        r="0.15"
-                        fill="#FFD700"
-                        stroke="#000"
-                        strokeWidth="0.02"
-                      />
-                    ))}
-                  </g>
-                )}
-                
-                {/* Dynamic Safe spots from Jetson */}
-                {jetsonData?.safeSpots?.map(spot => {
-                  const spotCoords = gpsToFieldCoords(spot, jetsonData.arena)
-                  const isDetected = detectedSpots.includes(spot.id)
+                {/* All content within clipping bounds */}
+                <g clipPath="url(#fieldClip)">
+                  {/* Competition Arena Boundary - FIXED (9x12m) */}
+                  <rect 
+                    x="0" 
+                    y="0" 
+                    width="9" 
+                    height="12" 
+                    fill="rgba(255,215,0,0.1)"
+                    stroke="#FFD700"
+                    strokeWidth="0.15"
+                    strokeDasharray="0.3,0.1"
+                  />
                   
-                  return (
-                    <g key={spot.id}>
-                      {/* Detection radius circle */}
-                      <circle 
-                        cx={spotCoords.x} 
-                        cy={12 - spotCoords.y} 
-                        r={DETECTION_THRESHOLD}
-                        fill={isDetected ? "rgba(0,255,0,0.2)" : "rgba(0,102,204,0.1)"}
-                        stroke={isDetected ? "#00ff00" : "#0066cc"}
-                        strokeWidth="0.03"
-                        strokeDasharray="0.1,0.1"
-                      >
-                        {/* Pulsing animation for detected spots */}
-                        {isDetected && (
-                          <animate attributeName="r" values={`${DETECTION_THRESHOLD};${DETECTION_THRESHOLD * 1.5};${DETECTION_THRESHOLD}`} dur="2s" repeatCount="indefinite"/>
-                        )}
-                      </circle>
-                      
-                      {/* Safe spot marker */}
-                      <rect 
-                        x={spotCoords.x - 0.2} 
-                        y={12 - spotCoords.y - 0.2} 
-                        width="0.4" 
-                        height="0.4" 
-                        fill={isDetected ? "#00ff00" : "#0066cc"}
-                        stroke="#000"
-                        strokeWidth="0.02"
+                  {/* Arena corners - FIXED */}
+                  {[[0,0], [9,0], [9,12], [0,12]].map(([x,y], index) => (
+                    <circle
+                      key={index}
+                      cx={x}
+                      cy={y}
+                      r="0.15"
+                      fill="#FFD700"
+                      stroke="#000"
+                      strokeWidth="0.03"
+                    />
+                  ))}
+                  
+                  {/* Dynamic Arena from Jetson (if different from fixed) */}
+                  {arenaFieldCoords.length >= 4 && (
+                    <g opacity="0.5">
+                      <polygon
+                        points={arenaFieldCoords.map(p => `${p.x},${12 - p.y}`).join(' ')}
+                        fill="rgba(100,200,255,0.1)"
+                        stroke="#64C8FF"
+                        strokeWidth="0.08"
+                        strokeDasharray="0.15,0.05"
                       />
-                      
-                      {/* Spot label */}
-                      <text 
-                        x={spotCoords.x} 
-                        y={12 - spotCoords.y + 0.6} 
-                        textAnchor="middle" 
-                        fontSize="0.25"
-                        fill="#000"
-                        fontWeight="bold"
-                      >
-                        {spot.id}
-                      </text>
+                      {arenaFieldCoords.map((corner, index) => (
+                        <circle
+                          key={index}
+                          cx={corner.x}
+                          cy={12 - corner.y}
+                          r="0.1"
+                          fill="#64C8FF"
+                          stroke="#000"
+                          strokeWidth="0.02"
+                        />
+                      ))}
                     </g>
-                  )
-                })}
-                
-                {/* Position trail */}
-                {positionHistory.length > 1 && (
-                  <g>
-                    <polyline
-                      points={positionHistory.map(pos => `${pos.x},${12 - pos.y}`).join(' ')}
-                      fill="none"
-                      stroke="#ff6666"
-                      strokeWidth="0.05"
-                      opacity="0.7"
-                      strokeDasharray="0.1,0.05"
-                    />
-                    {positionHistory.slice(0, -1).map((pos, index) => (
-                      <circle
-                        key={index}
-                        cx={pos.x}
-                        cy={12 - pos.y}
-                        r="0.08"
-                        fill="#ff9999"
-                        opacity={0.3 + (index / positionHistory.length) * 0.4}
-                      />
-                    ))}
-                  </g>
-                )}
-                
-                {/* Current drone position */}
-                <g>
-                  <circle 
-                    cx={currentPosition.x} 
-                    cy={12 - currentPosition.y} 
-                    r="0.4" 
-                    fill="rgba(255,0,0,0.3)"
-                    stroke="none"
-                  />
-                  <circle 
-                    cx={currentPosition.x} 
-                    cy={12 - currentPosition.y} 
-                    r="0.25" 
-                    fill="#ff0000"
-                    stroke="#000000"
-                    strokeWidth="0.05"
-                  />
-                  <circle 
-                    cx={currentPosition.x} 
-                    cy={12 - currentPosition.y} 
-                    r="0.12" 
-                    fill="#ffff00"
-                    stroke="#000000"
-                    strokeWidth="0.02"
-                  />
+                  )}
                   
-                  {/* Pulse animation circle */}
-                  <circle 
-                    cx={currentPosition.x} 
-                    cy={12 - currentPosition.y} 
-                    r="0.3" 
-                    fill="none"
-                    stroke="#ff0000"
-                    strokeWidth="0.03"
-                    opacity="0.6"
-                  >
-                    <animate attributeName="r" values="0.3;0.6;0.3" dur="2s" repeatCount="indefinite"/>
-                    <animate attributeName="opacity" values="0.6;0;0.6" dur="2s" repeatCount="indefinite"/>
-                  </circle>
+                  {/* Dynamic Safe spots from Jetson */}
+                  {jetsonData?.safeSpots?.map(spot => {
+                    const spotCoords = gpsToFieldCoords(spot, jetsonData.arena)
+                    const isDetected = detectedSpots.includes(spot.id)
+                    const isOutsideArena = spotCoords.x < 0 || spotCoords.x > 9 || spotCoords.y < 0 || spotCoords.y > 12
+                    
+                    return (
+                      <g key={spot.id}>
+                        {/* Detection radius circle */}
+                        <circle 
+                          cx={spotCoords.x} 
+                          cy={12 - spotCoords.y} 
+                          r={DETECTION_THRESHOLD}
+                          fill={isDetected ? "rgba(0,255,0,0.2)" : "rgba(0,102,204,0.1)"}
+                          stroke={isDetected ? "#00ff00" : "#0066cc"}
+                          strokeWidth="0.03"
+                          strokeDasharray="0.1,0.1"
+                          opacity={isOutsideArena ? 0.5 : 1}
+                        >
+                          {/* Pulsing animation for detected spots */}
+                          {isDetected && (
+                            <animate attributeName="r" values={`${DETECTION_THRESHOLD};${DETECTION_THRESHOLD * 1.5};${DETECTION_THRESHOLD}`} dur="2s" repeatCount="indefinite"/>
+                          )}
+                        </circle>
+                        
+                        {/* Safe spot marker */}
+                        <rect 
+                          x={spotCoords.x - 0.2} 
+                          y={12 - spotCoords.y - 0.2} 
+                          width="0.4" 
+                          height="0.4" 
+                          fill={isDetected ? "#00ff00" : "#0066cc"}
+                          stroke="#000"
+                          strokeWidth="0.02"
+                          opacity={isOutsideArena ? 0.5 : 1}
+                        />
+                        
+                        {/* Spot label */}
+                        <text 
+                          x={spotCoords.x} 
+                          y={12 - spotCoords.y + 0.6} 
+                          textAnchor="middle" 
+                          fontSize="0.25"
+                          className="fill-black dark:fill-white"
+                          fontWeight="bold"
+                          opacity={isOutsideArena ? 0.5 : 1}
+                        >
+                          {spot.id}
+                        </text>
+                        
+                        {/* Field coordinates display */}
+                        <text 
+                          x={spotCoords.x} 
+                          y={12 - spotCoords.y + 0.9} 
+                          textAnchor="middle" 
+                          fontSize="0.15"
+                          className="fill-gray-600 dark:fill-gray-400"
+                          opacity={isOutsideArena ? 0.5 : 1}
+                        >
+                          ({spotCoords.x.toFixed(1)}m, {spotCoords.y.toFixed(1)}m)
+                        </text>
+                        
+                        {/* Out of bounds indicator */}
+                        {isOutsideArena && (
+                          <text 
+                            x={spotCoords.x} 
+                            y={12 - spotCoords.y - 0.3} 
+                            textAnchor="middle" 
+                            fontSize="0.15"
+                            fill="#ff0000"
+                            fontWeight="bold"
+                          >
+                            OUT
+                          </text>
+                        )}
+                      </g>
+                    )
+                  })}
+                  
+                  {/* Position trail */}
+                  {positionHistory.length > 1 && (
+                    <g>
+                      <polyline
+                        points={positionHistory.map(pos => `${pos.x},${12 - pos.y}`).join(' ')}
+                        fill="none"
+                        stroke="#ff6666"
+                        strokeWidth="0.05"
+                        opacity="0.7"
+                        strokeDasharray="0.1,0.05"
+                      />
+                      {positionHistory.slice(0, -1).map((pos, index) => (
+                        <circle
+                          key={index}
+                          cx={pos.x}
+                          cy={12 - pos.y}
+                          r="0.08"
+                          fill="#ff9999"
+                          opacity={0.3 + (index / positionHistory.length) * 0.4}
+                        />
+                      ))}
+                    </g>
+                  )}
+                  
+                  {/* Current drone position */}
+                  <g>
+                    {(() => {
+                      const isOutsideArena = currentPosition.x < 0 || currentPosition.x > 9 || currentPosition.y < 0 || currentPosition.y > 12
+                      
+                      return (
+                        <>
+                          <circle 
+                            cx={currentPosition.x} 
+                            cy={12 - currentPosition.y} 
+                            r="0.4" 
+                            fill="rgba(255,0,0,0.3)"
+                            stroke="none"
+                          />
+                          <circle 
+                            cx={currentPosition.x} 
+                            cy={12 - currentPosition.y} 
+                            r="0.25" 
+                            fill={isOutsideArena ? "#ff8800" : "#ff0000"}
+                            stroke="#000000"
+                            strokeWidth="0.05"
+                          />
+                          <circle 
+                            cx={currentPosition.x} 
+                            cy={12 - currentPosition.y} 
+                            r="0.12" 
+                            fill="#ffff00"
+                            stroke="#000000"
+                            strokeWidth="0.02"
+                          />
+                          
+                          {/* Pulse animation circle */}
+                          <circle 
+                            cx={currentPosition.x} 
+                            cy={12 - currentPosition.y} 
+                            r="0.3" 
+                            fill="none"
+                            stroke={isOutsideArena ? "#ff8800" : "#ff0000"}
+                            strokeWidth="0.03"
+                            opacity="0.6"
+                          >
+                            <animate attributeName="r" values="0.3;0.6;0.3" dur="2s" repeatCount="indefinite"/>
+                            <animate attributeName="opacity" values="0.6;0;0.6" dur="2s" repeatCount="indefinite"/>
+                          </circle>
+                          
+                          {/* Out of arena warning */}
+                          {isOutsideArena && (
+                            <text 
+                              x={currentPosition.x} 
+                              y={12 - currentPosition.y - 0.6} 
+                              textAnchor="middle" 
+                              fontSize="0.2"
+                              fill="#ff0000"
+                              fontWeight="bold"
+                            >
+                              OUT OF ARENA
+                            </text>
+                          )}
+                        </>
+                      )
+                    })()}
+                  </g>
                 </g>
                 
-                {/* Coordinates display */}
-                <text x="4.5" y="0.5" textAnchor="middle" fontSize="0.3" fill="#666">
-                  Dynamic Arena from Jetson
+                {/* Fixed coordinates display */}
+                <text x="4.5" y="0.5" textAnchor="middle" fontSize="0.3" className="fill-gray-600 dark:fill-gray-400">
+                  Arena: 9×12m Competition Zone
                 </text>
+                
+                {/* Mission Complete Banner */}
+                {detectedSpots.length === 3 && (
+                  <>
+                    <rect x="1" y="5" width="7" height="2" fill="rgba(0,255,0,0.8)" stroke="#00ff00" strokeWidth="0.1" rx="0.2"/>
+                    <text x="4.5" y="6.2" textAnchor="middle" fontSize="0.4" fill="#000" fontWeight="bold">
+                      🏆 MISSION COMPLETE! 🏆
+                    </text>
+                    <text x="4.5" y="6.6" textAnchor="middle" fontSize="0.2" fill="#000">
+                      All 3 Safe Spots Detected!
+                    </text>
+                  </>
+                )}
               </svg>
             </div>
           </CardContent>
@@ -519,12 +629,27 @@ export default function SafeSpotsPage() {
             </div>
 
             {/* Detection Summary */}
-            <Alert>
-              <AlertTitle>🎯 Detection Summary</AlertTitle>
+            <Alert className={detectedSpots.length === 3 ? 'border-green-500 bg-green-50' : ''}>
+              <AlertTitle className="flex items-center gap-2">
+                🎯 Detection Summary
+                {detectedSpots.length === 3 && (
+                  <Badge variant="default" className="bg-green-500">
+                    ✅ MISSION COMPLETE
+                  </Badge>
+                )}
+              </AlertTitle>
               <AlertDescription>
-                Detected: {detectedSpots.length}/{jetsonData?.safeSpots?.length || 0} safe spots
+                Detected: {detectedSpots.length}/3 safe spots
                 <br />
                 Detection Threshold: {DETECTION_THRESHOLD}m radius
+                {detectedSpots.length === 3 && (
+                  <>
+                    <br />
+                    <span className="text-green-700 font-bold">
+                      🏆 All safe spots detected! Mission accomplished!
+                    </span>
+                  </>
+                )}
               </AlertDescription>
             </Alert>
 
@@ -549,6 +674,9 @@ export default function SafeSpotsPage() {
                             }`} />
                             <div>
                               <div className="font-medium">{spot.id}</div>
+                              <div className="text-xs text-muted-foreground font-mono">
+                                Field: ({spotCoords.x.toFixed(1)}m, {spotCoords.y.toFixed(1)}m)
+                              </div>
                               <div className="text-xs text-muted-foreground font-mono">
                                 GPS: {spot.lat.toFixed(6)}, {spot.lng.toFixed(6)}
                               </div>
@@ -596,11 +724,26 @@ export default function SafeSpotsPage() {
               <div>
                 <h4 className="font-semibold mb-2">Safe Spots</h4>
                 <div className="space-y-1 text-sm font-mono">
-                  {jetsonData.safeSpots.map((spot, index) => (
-                    <div key={index} className="bg-green-50 p-2 rounded">
-                      {spot.id}: [{spot.lat.toFixed(6)}, {spot.lng.toFixed(6)}]
-                    </div>
-                  ))}
+                  {jetsonData.safeSpots.map((spot, index) => {
+                    const spotCoords = gpsToFieldCoords(spot, jetsonData.arena)
+                    return (
+                      <div key={index} className="bg-green-50 p-2 rounded">
+                        <div className="font-medium">{spot.id}</div>
+                        <div className="text-xs">Field: ({spotCoords.x.toFixed(1)}m, {spotCoords.y.toFixed(1)}m)</div>
+                        <div className="text-xs">GPS: [{spot.lat.toFixed(6)}, {spot.lng.toFixed(6)}]</div>
+                      </div>
+                    )
+                  })}
+                </div>
+                
+                {/* Competition Reference */}
+                <div className="mt-3 p-2 bg-blue-50 rounded border-l-4 border-blue-500">
+                  <div className="text-xs font-semibold mb-1">Competition Specification:</div>
+                  <div className="text-xs space-y-1">
+                    <div>SafeSpot1: (3.5m, 7m) - Top-left area</div>
+                    <div>SafeSpot2: (9.5m, 7m) - Top-right area</div>
+                    <div>SafeSpot3: (9.5m, 2.5m) - Bottom-right area</div>
+                  </div>
                 </div>
               </div>
             </div>

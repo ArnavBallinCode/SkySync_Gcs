@@ -163,16 +163,16 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const mockData = `Arena:
-Corner1: [12.0345, 77.1234]
-Corner2: [12.0345, 77.1265]
-Corner3: [12.0315, 77.1265]
-Corner4: [12.0315, 77.1234]
+Corner1: [12.0315, 77.1234]
+Corner2: [12.0345, 77.1234]
+Corner3: [12.0345, 77.1265]
+Corner4: [12.0315, 77.1265]
 
 Detected Safe Spots
 SafeSpots:
-Spot1: [12.0331, 77.1245]
-Spot2: [12.0320, 77.1255]
-Spot3: [12.0330, 77.1239]`
+SafeSpot1: [12.0338, 77.1245]
+SafeSpot2: [12.0338, 77.1263]
+SafeSpot3: [12.0323, 77.1263]`
 
     const parsedData = parseArenaData(mockData)
     
