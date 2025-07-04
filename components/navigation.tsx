@@ -15,6 +15,7 @@ export function Navigation() {
     { name: "Radio", href: "/radio" },
     { name: "Calibration", href: "/calibration" },
     { name: "Safe Spots", href: "/safe-spots" },
+    { name: "History", href: "/history" },
     { name: "Arena", href: "/arena" },
     { name: "About", href: "/about" },
     { name: "Docs", href: "/docs" },

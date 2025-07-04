@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { MainLayout } from "@/components/main-layout"
 import { Preloader } from "@/components/preloader"
 import { Navigation } from "@/components/navigation"
+import { HistoryDataCollector } from "@/components/history-data-collector"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -26,6 +27,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <HistoryDataCollector />
           <Preloader />
           <Navigation />
           <main className="pt-16">
