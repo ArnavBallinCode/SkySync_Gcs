@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { readFileSync, writeFileSync, existsSync } from 'fs'
+import { readFileSync, writeFileSync, existsSync, unlinkSync, readdirSync } from 'fs'
 import { join } from 'path'
 
 const HISTORY_DIR = join(process.cwd(), 'public', 'params_history')
@@ -219,7 +219,38 @@ function appendToHistory(data: TelemetrySnapshot) {
   }
 }
 
-// Function to get history data
+// Function to clear all history data
+function clearHistoryData() {
+  try {
+    // Get all history files
+    const files = readdirSync(HISTORY_DIR)
+    const historyFiles = files.filter(file => file.startsWith('history_') && file.endsWith('.json'))
+    
+    // Delete all history files
+    let deletedCount = 0
+    historyFiles.forEach(file => {
+      const filePath = join(HISTORY_DIR, file)
+      try {
+        unlinkSync(filePath)
+        deletedCount++
+      } catch (error) {
+        console.error(`Error deleting file ${file}:`, error)
+      }
+    })
+    
+    return {
+      success: true,
+      deletedFiles: deletedCount,
+      message: `Cleared ${deletedCount} history files`
+    }
+  } catch (error) {
+    console.error('Error clearing history data:', error)
+    return {
+      success: false,
+      error: 'Failed to clear history data'
+    }
+  }
+}
 function getHistoryData(days: number = 1): TelemetrySnapshot[] {
   let allData: TelemetrySnapshot[] = []
   
@@ -261,6 +292,22 @@ export async function GET(request: NextRequest) {
         message: 'Data collected and stored',
         data: currentData
       })
+    } else if (action === 'clear') {
+      // Clear all history data
+      const result = clearHistoryData()
+      
+      if (result.success) {
+        return NextResponse.json({
+          status: 'success',
+          message: result.message,
+          deletedFiles: result.deletedFiles
+        })
+      } else {
+        return NextResponse.json({
+          status: 'error',
+          error: result.error
+        }, { status: 500 })
+      }
     } else {
       // Return historical data
       const historyData = getHistoryData(days)

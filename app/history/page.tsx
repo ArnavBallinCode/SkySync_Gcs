@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { RefreshCw, Download, Play, Pause, Database, Clock, TrendingUp } from "lucide-react"
+import { RefreshCw, Download, Play, Pause, Database, Clock, TrendingUp, Trash2 } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, AreaChart, Area } from 'recharts'
 
 interface TelemetrySnapshot {
@@ -66,6 +66,7 @@ export default function HistoryAnalysisPage() {
   const [historyData, setHistoryData] = useState<TelemetrySnapshot[]>([])
   const [loading, setLoading] = useState(false)
   const [collecting, setCollecting] = useState(false)
+  const [clearing, setClearing] = useState(false)
   const [autoCollect, setAutoCollect] = useState(false)
   const [selectedDays, setSelectedDays] = useState('1')
   const [lastUpdate, setLastUpdate] = useState<string>('')
@@ -126,6 +127,43 @@ export default function HistoryAnalysisPage() {
       console.error('Error collecting data:', error)
     } finally {
       setCollecting(false)
+    }
+  }
+
+  // Clear all history data
+  const clearHistoryData = async () => {
+    if (!confirm('Are you sure you want to clear all historical data? This action cannot be undone.')) {
+      return
+    }
+    
+    setClearing(true)
+    try {
+      const response = await fetch('/api/history-data?action=clear', {
+        method: 'GET',
+        cache: 'no-store'
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const result = await response.json()
+      
+      if (result.status === 'success') {
+        // Clear local state and refresh
+        setHistoryData([])
+        setDataCount(0)
+        setLastUpdate(new Date().toLocaleTimeString())
+        alert(`Successfully cleared ${result.deletedFiles} history files`)
+      } else {
+        console.error('Failed to clear history data:', result.error)
+        alert('Failed to clear history data: ' + result.error)
+      }
+    } catch (error) {
+      console.error('Error clearing history data:', error)
+      alert('Error clearing history data: ' + error)
+    } finally {
+      setClearing(false)
     }
   }
 
@@ -249,7 +287,7 @@ export default function HistoryAnalysisPage() {
           <CardTitle>Data Collection & Control</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Time Range</label>
               <Select value={selectedDays} onValueChange={setSelectedDays}>
@@ -319,6 +357,22 @@ export default function HistoryAnalysisPage() {
                 <Download className="w-4 h-4 mr-2" />
                 Download JSON
               </Button>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <Button
+                onClick={clearHistoryData}
+                disabled={clearing || historyData.length === 0}
+                variant="destructive"
+                size="sm"
+              >
+                <Trash2 className={`w-4 h-4 mr-2 ${clearing ? 'animate-spin' : ''}`} />
+                {clearing ? 'Clearing...' : 'Clear History'}
+              </Button>
+              
+              <div className="text-xs text-muted-foreground text-center">
+                Permanently deletes all data
+              </div>
             </div>
           </div>
           
