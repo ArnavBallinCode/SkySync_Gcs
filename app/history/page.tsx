@@ -203,10 +203,10 @@ export default function HistoryAnalysisPage() {
       timestamp: new Date(item.timestamp).toLocaleTimeString(),
       fullTime: item.timestamp,
       
-      // Position data
+      // Position data (NED coordinate system - invert Z for intuitive display)
       x: item.position?.x || 0,
       y: item.position?.y || 0,
-      z: item.position?.z || 0,
+      z: -(item.position?.z || 0), // Invert Z: NED down is positive, but we want up to be positive
       altitude: item.position?.relative_alt || 0,
       
       // Attitude data
@@ -412,8 +412,11 @@ export default function HistoryAnalysisPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <TrendingUp className="w-5 h-5" />
-                    Z Position vs Time (Altitude)
+                    Z Position vs Time (Height Above Ground)
                   </CardTitle>
+                  <div className="text-sm text-muted-foreground">
+                    Positive values indicate height above starting point (NED Z-axis inverted for intuitive display)
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={400}>
@@ -423,7 +426,7 @@ export default function HistoryAnalysisPage() {
                       <YAxis />
                       <Tooltip 
                         labelFormatter={(value) => `Time: ${value}`}
-                        formatter={(value: number, name: string) => [value.toFixed(3) + 'm', 'Z Position']}
+                        formatter={(value: number, name: string) => [value.toFixed(3) + 'm', 'Height Above Ground']}
                       />
                       <Area
                         type="monotone"
@@ -453,7 +456,7 @@ export default function HistoryAnalysisPage() {
                       <Legend />
                       <Line type="monotone" dataKey="x" stroke="#8884d8" name="X Position (m)" />
                       <Line type="monotone" dataKey="y" stroke="#82ca9d" name="Y Position (m)" />
-                      <Line type="monotone" dataKey="z" stroke="#ffc658" name="Z Position (m)" strokeWidth={3} />
+                      <Line type="monotone" dataKey="z" stroke="#ffc658" name="Z Height (m)" strokeWidth={3} />
                     </LineChart>
                   </ResponsiveContainer>
                 </CardContent>

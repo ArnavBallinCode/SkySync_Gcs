@@ -165,6 +165,18 @@ async function getCurrentTelemetryData(): Promise<TelemetrySnapshot> {
       }
     }
 
+    // Read DISTANCE_SENSOR (alternative/backup for rangefinder)
+    const distanceSensorPath = join(PARAMS_DIR, 'DISTANCE_SENSOR.json')
+    if (existsSync(distanceSensorPath)) {
+      const distanceSensor = JSON.parse(readFileSync(distanceSensorPath, 'utf8'))
+      // If we don't have rangefinder data, use distance sensor
+      if (!snapshot.rangefinder || snapshot.rangefinder.distance === 0) {
+        snapshot.rangefinder = {
+          distance: distanceSensor.current_distance || distanceSensor.distance || 0
+        }
+      }
+    }
+
     // Read HEARTBEAT
     const heartbeatPath = join(PARAMS_DIR, 'HEARTBEAT.json')
     if (existsSync(heartbeatPath)) {

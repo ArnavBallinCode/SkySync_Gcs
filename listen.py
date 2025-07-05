@@ -54,7 +54,11 @@ def monitor_messages(master):
         'LOCAL_POSITION_NED': 'LOCAL_POSITION_NED.json',
         'GLOBAL_POSITION_INT': 'GLOBAL_POSITION_INT.json',
         'BATTERY_STATUS': 'BATTERY_STATUS.json',
-        'SYS_STATUS': 'SYS_STATUS.json'
+        'SYS_STATUS': 'SYS_STATUS.json',
+        'RANGEFINDER': 'RANGEFINDER.json',
+        'DISTANCE_SENSOR': 'DISTANCE_SENSOR.json',
+        'AHRS': 'AHRS.json',
+        'AHRS2': 'AHRS2.json'
     }
 
     msg = master.recv_match(blocking=False)
@@ -84,3 +88,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+    
