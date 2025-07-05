@@ -240,13 +240,110 @@ export default function HistoryAnalysisPage() {
   const chartData = prepareChartData()
 
   // Download data as JSON
-  const downloadData = () => {
+  const downloadDataJSON = () => {
     const dataStr = JSON.stringify(historyData, null, 2)
     const dataBlob = new Blob([dataStr], { type: 'application/json' })
     const url = URL.createObjectURL(dataBlob)
     const link = document.createElement('a')
     link.href = url
     link.download = `telemetry_history_${new Date().toISOString().split('T')[0]}.json`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  // Download data as CSV
+  const downloadDataCSV = () => {
+    if (historyData.length === 0) return
+
+    // Define CSV headers
+    const headers = [
+      'timestamp',
+      'time_boot_ms',
+      'battery_voltage',
+      'battery_current',
+      'battery_remaining',
+      'battery_temperature',
+      'position_x',
+      'position_y',
+      'position_z',
+      'position_lat',
+      'position_lon',
+      'position_alt',
+      'position_relative_alt',
+      'attitude_roll_deg',
+      'attitude_pitch_deg',
+      'attitude_yaw_deg',
+      'attitude_rollspeed',
+      'attitude_pitchspeed',
+      'attitude_yawspeed',
+      'velocity_vx',
+      'velocity_vy',
+      'velocity_vz',
+      'imu_xacc',
+      'imu_yacc',
+      'imu_zacc',
+      'imu_xgyro',
+      'imu_ygyro',
+      'imu_zgyro',
+      'imu_xmag',
+      'imu_ymag',
+      'imu_zmag',
+      'rangefinder_distance',
+      'heartbeat_system_status',
+      'heartbeat_base_mode',
+      'heartbeat_custom_mode'
+    ]
+
+    // Convert data to CSV rows
+    const csvRows = historyData.map(item => [
+      item.timestamp,
+      item.time_boot_ms,
+      item.battery?.voltage || '',
+      item.battery?.current || '',
+      item.battery?.remaining || '',
+      item.battery?.temperature || '',
+      item.position?.x || '',
+      item.position?.y || '',
+      -(item.position?.z || 0), // Invert Z for intuitive display
+      item.position?.lat || '',
+      item.position?.lon || '',
+      item.position?.alt || '',
+      item.position?.relative_alt || '',
+      item.attitude?.roll ? (item.attitude.roll * 180 / Math.PI) : '',
+      item.attitude?.pitch ? (item.attitude.pitch * 180 / Math.PI) : '',
+      item.attitude?.yaw ? (item.attitude.yaw * 180 / Math.PI) : '',
+      item.attitude?.rollspeed || '',
+      item.attitude?.pitchspeed || '',
+      item.attitude?.yawspeed || '',
+      item.velocity?.vx || '',
+      item.velocity?.vy || '',
+      item.velocity?.vz || '',
+      item.imu?.xacc || '',
+      item.imu?.yacc || '',
+      item.imu?.zacc || '',
+      item.imu?.xgyro || '',
+      item.imu?.ygyro || '',
+      item.imu?.zgyro || '',
+      item.imu?.xmag || '',
+      item.imu?.ymag || '',
+      item.imu?.zmag || '',
+      item.rangefinder?.distance || '',
+      item.heartbeat?.system_status || '',
+      item.heartbeat?.base_mode || '',
+      item.heartbeat?.custom_mode || ''
+    ])
+
+    // Create CSV content
+    const csvContent = [headers, ...csvRows]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n')
+
+    // Download CSV
+    const dataBlob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(dataBlob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `telemetry_history_${new Date().toISOString().split('T')[0]}.csv`
     link.click()
     URL.revokeObjectURL(url)
   }
@@ -349,13 +446,23 @@ export default function HistoryAnalysisPage() {
               </Button>
               
               <Button
-                onClick={downloadData}
+                onClick={downloadDataJSON}
                 variant="outline"
                 size="sm"
                 disabled={historyData.length === 0}
               >
                 <Download className="w-4 h-4 mr-2" />
                 Download JSON
+              </Button>
+              
+              <Button
+                onClick={downloadDataCSV}
+                variant="outline"
+                size="sm"
+                disabled={historyData.length === 0}
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Download CSV
               </Button>
             </div>
 

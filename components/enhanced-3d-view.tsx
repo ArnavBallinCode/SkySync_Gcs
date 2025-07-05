@@ -145,12 +145,18 @@ function Drone({ position, rotation, showTrail = true }: DroneProps) {
 
 // Debug overlay
 function DebugOverlay({ position, attitude }: { position: Position; attitude: Attitude }) {
+  // Determine which quadrant the drone is in
+  const quadrant = position.x >= 0 && position.y >= 0 ? "I (+X, +Z)" :
+                   position.x < 0 && position.y >= 0 ? "II (-X, +Z)" :
+                   position.x < 0 && position.y < 0 ? "III (-X, -Z)" :
+                   "IV (+X, -Z)"
+                   
   return (
-    <group position={[-2, 2, 0]}>
+    <group position={[-8, 3, 0]}>
       <Text
         color="white"
         fontSize={0.15}
-        maxWidth={2}
+        maxWidth={3}
         lineHeight={1.5}
         letterSpacing={0.02}
         textAlign="left"
@@ -162,6 +168,8 @@ X: ${position.x.toFixed(2)}
 Y: ${position.y.toFixed(2)}
 Z: ${position.z.toFixed(2)}
 
+Quadrant: ${quadrant}
+
 Attitude (deg):
 Roll: ${(attitude.roll * 180 / Math.PI).toFixed(1)}°
 Pitch: ${(attitude.pitch * 180 / Math.PI).toFixed(1)}°
@@ -171,30 +179,31 @@ Yaw: ${(attitude.yaw * 180 / Math.PI).toFixed(1)}°`}
   )
 }
 
-// Enhanced grid with better visibility and custom size
+// Enhanced grid with better visibility and extended range
 function EnhancedGrid() {
-  // Arena dimensions: 9x12 meters positioned on positive axis only
+  // Extended arena dimensions: -9 to +9 (18m wide) and -12 to +12 (24m long)
   return (
     <>
       <Grid
-        position={[4.5, 0, 6]}
-        args={[9, 12]}
+        position={[0, 0, 0]} // Center the grid at origin
+        args={[18, 24]} // 18m x 24m total area
         cellSize={1}
         cellThickness={1.5}
         cellColor="#ffffff"
         sectionSize={3}
         sectionThickness={2}
         sectionColor="#00ff00"
-        fadeDistance={30}
+        fadeDistance={50}
         fadeStrength={1}
         infiniteGrid={false}
         followCamera={false}
       />
-      {/* X-axis labels (9 meters wide) */}
-      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((x) => (
+      
+      {/* X-axis labels (-9 to +9) */}
+      {Array.from({length: 19}, (_, i) => i - 9).map((x) => (
         <Text
           key={`x-${x}`}
-          position={[x, 0.1, -0.5]}
+          position={[x, 0.1, -12.5]}
           rotation={[-Math.PI / 2, 0, 0]}
           color="#ffffff"
           fontSize={0.4}
@@ -202,11 +211,12 @@ function EnhancedGrid() {
           {x}m
         </Text>
       ))}
-      {/* Z-axis labels (12 meters long) */}
-      {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((z) => (
+      
+      {/* Z-axis labels (-12 to +12) */}
+      {Array.from({length: 25}, (_, i) => i - 12).map((z) => (
         <Text
           key={`z-${z}`}
-          position={[-0.5, 0.1, z]}
+          position={[-9.5, 0.1, z]}
           rotation={[-Math.PI / 2, 0, Math.PI / 2]}
           color="#ffffff"
           fontSize={0.4}
@@ -215,18 +225,32 @@ function EnhancedGrid() {
         </Text>
       ))}
       
-      {/* Arena boundary markers */}
+      {/* Quadrant boundary lines */}
       <group>
-        {/* Corner markers */}
-        <mesh position={[0, 0.05, 0]}>
+        {/* X-axis line */}
+        <mesh position={[0, 0.01, 0]} rotation={[0, 0, Math.PI / 2]}>
+          <cylinderGeometry args={[0.02, 0.02, 18]} />
+          <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.3} />
+        </mesh>
+        
+        {/* Z-axis line */}
+        <mesh position={[0, 0.01, 0]}>
+          <cylinderGeometry args={[0.02, 0.02, 24]} />
+          <meshStandardMaterial color="#ff0000" emissive="#ff0000" emissiveIntensity={0.3} />
+        </mesh>
+      </group>
+      
+      {/* Corner markers for extended area */}
+      <group>
+        <mesh position={[-9, 0.05, -12]}>
           <cylinderGeometry args={[0.1, 0.1, 0.1]} />
           <meshStandardMaterial color="#ff6b6b" emissive="#ff6b6b" emissiveIntensity={0.3} />
         </mesh>
-        <mesh position={[9, 0.05, 0]}>
+        <mesh position={[9, 0.05, -12]}>
           <cylinderGeometry args={[0.1, 0.1, 0.1]} />
           <meshStandardMaterial color="#ff6b6b" emissive="#ff6b6b" emissiveIntensity={0.3} />
         </mesh>
-        <mesh position={[0, 0.05, 12]}>
+        <mesh position={[-9, 0.05, 12]}>
           <cylinderGeometry args={[0.1, 0.1, 0.1]} />
           <meshStandardMaterial color="#ff6b6b" emissive="#ff6b6b" emissiveIntensity={0.3} />
         </mesh>
@@ -234,6 +258,7 @@ function EnhancedGrid() {
           <cylinderGeometry args={[0.1, 0.1, 0.1]} />
           <meshStandardMaterial color="#ff6b6b" emissive="#ff6b6b" emissiveIntensity={0.3} />
         </mesh>
+        
       </group>
     </>
   )
@@ -352,7 +377,7 @@ export function Enhanced3DView({ className }: EnhancedVisualizerProps) {
         <Suspense fallback={null}>
           <PerspectiveCamera
             makeDefault
-            position={[5, 5, 5]}
+            position={[12, 8, 12]}
             fov={60}
             near={0.1}
             far={1000}
