@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PositionData } from "@/components/position-data"
-import { AttitudeVisualizer } from "@/components/attitude-visualizer"
+import { RangefinderData } from "@/components/rangefinder-data"
 import { Enhanced3DView } from "@/components/enhanced-3d-view"
 import { TelemetryStatus } from "@/components/telemetry-status"
 import { TelemetryOverview } from "@/components/telemetry-overview"
@@ -32,10 +32,10 @@ export default function DashboardPage() {
         </Card>
         <Card className="md:col-span-1">
           <CardHeader>
-            <CardTitle>Attitude</CardTitle>
+            <CardTitle>Rangefinder</CardTitle>
           </CardHeader>
           <CardContent className="flex justify-center">
-            <AttitudeVisualizer />
+            <RangefinderData />
           </CardContent>
         </Card>
       </div>
