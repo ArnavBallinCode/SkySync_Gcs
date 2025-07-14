@@ -17,25 +17,29 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   return (
     <div className="relative flex min-h-screen">
-      {/* Sidebar for desktop */}
+      {/* Sidebar for desktop with collapse/expand and mode toggle at the top */}
       <div
         className={cn(
-          "fixed hidden h-full flex-col border-r bg-background md:flex",
+          "fixed hidden h-full flex-col border-r bg-background md:flex transition-all duration-200",
           isCollapsed ? "w-16" : "w-64"
         )}
       >
-        <div className="flex h-14 items-center justify-between border-b px-4">
-          {!isCollapsed && <span className="font-semibold">Drone Control</span>}
+        {/* Top section: Mode toggle and collapse button */}
+        <div className="flex items-center justify-between h-14 border-b px-2">
+          <ModeToggle />
           <Button
             variant="ghost"
             size="icon"
             className="ml-auto"
             onClick={() => setIsCollapsed(!isCollapsed)}
+            aria-label={isCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
         </div>
-        <SidebarNav className="flex-1" isCollapsed={isCollapsed} />
+        <div className="flex-1 flex flex-col">
+          <SidebarNav className="flex-1" isCollapsed={isCollapsed} />
+        </div>
       </div>
 
       {/* Mobile sidebar */}
@@ -53,13 +57,15 @@ export function MainLayout({ children }: MainLayoutProps) {
           )}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex h-14 items-center border-b px-4">
-            <span className="font-semibold">Drone Control</span>
+          {/* Top section: Mode toggle and close button */}
+          <div className="flex items-center justify-between h-14 border-b px-2">
+            <ModeToggle />
             <Button
               variant="ghost"
               size="icon"
               className="ml-auto"
               onClick={() => setIsMobileOpen(false)}
+              aria-label="Close sidebar"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -75,19 +81,6 @@ export function MainLayout({ children }: MainLayoutProps) {
           isCollapsed ? "md:pl-16" : "md:pl-64"
         )}
       >
-        <header className="sticky top-0 z-40 flex h-14 items-center border-b bg-background px-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mr-2 md:hidden"
-            onClick={() => setIsMobileOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-          <div className="ml-auto flex items-center gap-2">
-            <ModeToggle />
-          </div>
-        </header>
         <main className="flex-1 p-6">{children}</main>
       </div>
     </div>

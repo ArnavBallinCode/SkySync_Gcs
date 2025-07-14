@@ -26,3 +26,5 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 *.tex
+public/params_history/history_2025-07-14.json
+.DS_Store
