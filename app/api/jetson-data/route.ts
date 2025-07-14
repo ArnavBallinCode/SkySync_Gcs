@@ -61,8 +61,8 @@ function parseArenaData(content: string): ParsedData {
         continue
       }
       
-      // Parse coordinate lines
-      const coordMatch = line.match(/^(Corner\d+|Spot\d+):\s*\[([0-9.-]+),\s*([0-9.-]+)\]/)
+      // Parse coordinate lines (support SafeSpotX, SpotX, CornerX)
+      const coordMatch = line.match(/^(Corner\d+|SafeSpot\d+|Spot\d+):\s*\[([0-9.-]+),\s*([0-9.-]+)\]/)
       if (coordMatch) {
         const [, name, lat, lng] = coordMatch
         const latNum = parseFloat(lat)
